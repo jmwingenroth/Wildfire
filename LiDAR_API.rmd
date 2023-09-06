@@ -34,4 +34,27 @@ colnames(datasets)
 
 ```
 
-So, the Datasets API has provided us with quite a bit of information. Let's choose some variables that look promising.
+So, the Datasets API has provided us with quite a bit of information. Let's examine some variables that look promising.
+
+```{r}
+
+datasets %>%
+    select(title, id, lastPublishedDate, lastUpdatedDate, formats)
+
+```
+
+The fifth item appears to be what we're looking for. Let's take a closer look.
+
+```{r}
+
+datasets %>%
+    filter(str_detect(title, "Lidar")) %>%
+    select_if(is.character) %>% # Can't combine different types of variables in the same column
+    pivot_longer(title:zipLink)
+
+```
+
+Not especially helpful. Well, anyways, I've been playing around on the user-friendly [API for data products](https://apps.nationalmap.gov/tnmaccess/#/product) and have learned how to structure URL queries that way, so let's move on to that.
+
+## Finding LiDAR data
+

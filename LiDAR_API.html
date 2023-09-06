@@ -95,7 +95,56 @@ body {
 ## [21] &quot;mapServerLayerNames&quot;        &quot;descriptionLink&quot;           
 ## [23] &quot;layerOpacity&quot;               &quot;wmsLayers&quot;                 
 ## [25] &quot;zipLink&quot;</code></pre>
-<p>So, the Datasets API has provided us with quite a bit of information. Let’s choose some variables that look promising.</p>
+<p>So, the Datasets API has provided us with quite a bit of information. Let’s examine some variables that look promising.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>datasets <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(title, id, lastPublishedDate, lastUpdatedDate, formats)</span></code></pre></div>
+<pre><code>## # A tibble: 15 x 5
+##    title                                           id    lastP~1 lastU~2 formats
+##    &lt;chr&gt;                                           &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt; 
+##  1 US Topo                                         us-t~ &quot;Sep 4~ &quot;Sep 7~ &lt;df&gt;   
+##  2 Historical Topographic Maps                     hist~ &quot;Jan 1~ &quot;Jul 2~ &lt;df&gt;   
+##  3 Boundaries - National Boundary Dataset          nati~ &quot;Aug 1~ &quot;Aug 3~ &lt;df&gt;   
+##  4 Elevation Products (3DEP)                       elev~ &quot;Sep 9~ &quot;Sep 1~ &lt;df&gt;   
+##  5 Elevation Source Data (3DEP) - Lidar, IfSAR     elev~ &quot;Sep 9~ &quot;Sep 1~ &lt;df&gt;   
+##  6 Hydrography (NHDPlus HR, NHD, WBD)              hydr~ &quot;Sep 1~ &quot;Sep 1~ &lt;df&gt;   
+##  7 Imagery - NAIP Plus (1 meter to 1 foot)         imag~ &quot;Nov 2~ &quot;Sep 7~ &lt;df&gt;   
+##  8 Map Indices                                     map-~ &quot;Aug 1~ &quot;Aug 2~ &lt;df&gt;   
+##  9 Names - Geographic Names Information System (G~ name~ &quot;Jan 1~ &quot;Aug 9~ &lt;df&gt;   
+## 10 Small-scale Datasets                            smal~ &quot;Dec 6~ &quot;Jun 2~ &lt;df&gt;   
+## 11 Structures - National Structures Dataset        stru~ &quot;Aug 1~ &quot;Aug 3~ &lt;df&gt;   
+## 12 Topo Map Data and Topo Stylesheet               topo~ &quot;Aug 3~ &quot;Sep 3~ &lt;df&gt;   
+## 13 Topobathy - Elevation                           elev~ &quot;&quot;      &quot;&quot;      &lt;df&gt;   
+## 14 Transportation                                  tran~ &quot;Jul 1~ &quot;Jul 1~ &lt;df&gt;   
+## 15 Woodland Tint                                   wood~ &quot;Aug 2~ &quot;Sep 1~ &lt;df&gt;   
+## # ... with abbreviated variable names 1: lastPublishedDate, 2: lastUpdatedDate</code></pre>
+<p>The fifth item appears to be what we’re looking for. Let’s take a closer look.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>datasets <span class="sc">%&gt;%</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">str_detect</span>(title, <span class="st">&quot;Lidar&quot;</span>)) <span class="sc">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select_if</span>(is.character) <span class="sc">%&gt;%</span> <span class="co"># Can&#39;t combine different types of variables in the same column</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(title<span class="sc">:</span>zipLink)</span></code></pre></div>
+<pre><code>## # A tibble: 18 x 2
+##    name                   value                                                 
+##    &lt;chr&gt;                  &lt;chr&gt;                                                 
+##  1 title                  &quot;Elevation Source Data (3DEP) - Lidar, IfSAR&quot;         
+##  2 sbDatasetTag           &quot;National Elevation Dataset (NED)&quot;                    
+##  3 parentCategory         &quot;Data&quot;                                                
+##  4 id                     &quot;elevation-source-data-lidar-isfar&quot;                   
+##  5 description            &quot;&quot;                                                    
+##  6 refreshCycle           &quot;Continuous&quot;                                          
+##  7 lastPublishedDate      &quot;Sep 9, 2019&quot;                                         
+##  8 lastUpdatedDate        &quot;Sep 11, 2019&quot;                                        
+##  9 dataGovUrl             &quot;&quot;                                                    
+## 10 infoUrl                &quot;https://www.usgs.gov/core-science-systems/ngp/3dep/a~
+## 11 thumbnailUrl           &quot;https://apps.nationalmap.gov/datasets/img/lpc_thumb.~
+## 12 mapServerUrl           &quot;https://index.nationalmap.gov/arcgis/rest/services/3~
+## 13 mapServerLinkShowTitle  &lt;NA&gt;                                                 
+## 14 mapServerLinkHideTitle  &lt;NA&gt;                                                 
+## 15 defaultExtent          &quot;Varies&quot;                                              
+## 16 descriptionLink         &lt;NA&gt;                                                 
+## 17 layerOpacity            &lt;NA&gt;                                                 
+## 18 zipLink                 &lt;NA&gt;</code></pre>
+<p>Not especially helpful. Well, anyways, I’ve been playing around on the user-friendly <a href="https://apps.nationalmap.gov/tnmaccess/#/product">API for data products</a> and have learned how to structure URL queries that way, so let’s move on to that.</p>
+<h2 id="finding-lidar-data">Finding LiDAR data</h2>
 
 </body>
 </html>
