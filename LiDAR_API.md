@@ -1,0 +1,16 @@
+LiDAR API
+================
+
+## Goal
+
+We seek to find areas where LiDAR data has been collected on two
+occasions. Eventually we will use fire perimeter data to find areas
+where LiDAR was collected before and after a fire.
+
+## Approach
+
+I plan to use the R package from the
+[tidyverse](https://www.tidyverse.org) titled
+[httr](https://httr.r-lib.org/) to interact with the [web
+API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The
+National Map](https://apps.nationalmap.gov/lidar-explorer/#/).
