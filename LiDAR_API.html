@@ -27,9 +27,9 @@ body {
 
 <h1 id="lidar-api">LiDAR API</h1>
 <h2 id="goal">Goal</h2>
-<p>We seek to find areas where LiDAR data has been collected on two occasions. Eventually we will use fire perimeter data to find areas where LiDAR was collected before and after a fire.</p>
+<p>We seek to find areas where LiDAR data has been collected on two occasions. Eventually, we will use fire perimeter data to find areas where LiDAR was collected before and after a fire. That might allow us some insight into the effects of fire on the properties of vegetation and particularly underbrush, potentially using the machine-learning approach that Tony proposed.</p>
 <h2 id="approach">Approach</h2>
-<p>I plan to use the R packages in the <a href="https://www.tidyverse.org">tidyverse</a> to process data taken from the <a href="https://apps.nationalmap.gov/tnmaccess/#/">web API</a> provided by <a href="https://apps.nationalmap.gov/lidar-explorer/#/">The National Map</a>. Ultimately, interacting with URLs is performed using a package that ports <a href="https://curl.se/">curl</a> over to R.</p>
+<p>I plan to use the R packages in the <a href="https://www.tidyverse.org">tidyverse</a> to process data taken from the <a href="https://apps.nationalmap.gov/tnmaccess/#/">web API</a> provided by <a href="https://apps.nationalmap.gov/lidar-explorer/#/">The National Map</a>. Ultimately, interacting with URLs is performed using a package that ports <a href="https://curl.se/">curl</a> over to R. I’ll leave in the package messages and metadata just in case they help down the road.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load R packages</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div>
 <pre><code>## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
@@ -50,16 +50,7 @@ body {
 ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
 ## x dplyr::filter() masks stats::filter()
 ## x dplyr::lag()    masks stats::lag()</code></pre>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(jsonlite)</span></code></pre></div>
-<pre><code>## Warning: package &#39;jsonlite&#39; was built under R version 4.1.3
-
-## 
-## Attaching package: &#39;jsonlite&#39;
-
-## The following object is masked from &#39;package:purrr&#39;:
-## 
-##     flatten</code></pre>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(curl)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(curl)</span></code></pre></div>
 <pre><code>## Using libcurl 7.64.1 with Schannel
 
 ## 
@@ -69,82 +60,116 @@ body {
 ## 
 ##     parse_date</code></pre>
 <h2 id="finding-a-dataset">Finding a dataset</h2>
-<p>We’ll need to look at LiDAR products eventually, but to illustrate the general principle, let’s be thorough and use the Datasets API to track down the LiDAR data:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get datasets from the API and convert to a tidy table (tibble)</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>datasets <span class="ot">&lt;-</span> <span class="fu">stream_in</span>(<span class="fu">url</span>(<span class="st">&quot;https://tnmaccess.nationalmap.gov/api/v1/datasets&quot;</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tibble</span>()</span></code></pre></div>
-<pre><code>## opening url input connection.
-
-## Warning in readLines(con, n = pagesize, encoding = &quot;UTF-8&quot;): incomplete final
-## line found on &#39;https://tnmaccess.nationalmap.gov/api/v1/datasets&#39;
-
-##  Found 1 records... Imported 1 records. Simplifying...
-
-## closing url input connection.</code></pre>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(datasets)</span></code></pre></div>
-<pre><code>##  [1] &quot;title&quot;                      &quot;sbDatasetTag&quot;              
-##  [3] &quot;parentCategory&quot;             &quot;id&quot;                        
-##  [5] &quot;description&quot;                &quot;refreshCycle&quot;              
-##  [7] &quot;lastPublishedDate&quot;          &quot;lastUpdatedDate&quot;           
-##  [9] &quot;dataGovUrl&quot;                 &quot;infoUrl&quot;                   
-## [11] &quot;thumbnailUrl&quot;               &quot;mapServerLayerIdsForLegend&quot;
-## [13] &quot;mapServerUrl&quot;               &quot;showMapServerLink&quot;         
-## [15] &quot;mapServerLinkShowTitle&quot;     &quot;mapServerLinkHideTitle&quot;    
-## [17] &quot;formats&quot;                    &quot;defaultExtent&quot;             
-## [19] &quot;tags&quot;                       &quot;extents&quot;                   
-## [21] &quot;mapServerLayerNames&quot;        &quot;descriptionLink&quot;           
-## [23] &quot;layerOpacity&quot;               &quot;wmsLayers&quot;                 
-## [25] &quot;zipLink&quot;</code></pre>
-<p>So, the Datasets API has provided us with quite a bit of information. Let’s examine some variables that look promising.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>datasets <span class="sc">%&gt;%</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(title, id, lastPublishedDate, lastUpdatedDate, formats)</span></code></pre></div>
-<pre><code>## # A tibble: 15 x 5
-##    title                                           id    lastP~1 lastU~2 formats
-##    &lt;chr&gt;                                           &lt;chr&gt; &lt;chr&gt;   &lt;chr&gt;   &lt;list&gt; 
-##  1 US Topo                                         us-t~ &quot;Sep 4~ &quot;Sep 7~ &lt;df&gt;   
-##  2 Historical Topographic Maps                     hist~ &quot;Jan 1~ &quot;Jul 2~ &lt;df&gt;   
-##  3 Boundaries - National Boundary Dataset          nati~ &quot;Aug 1~ &quot;Aug 3~ &lt;df&gt;   
-##  4 Elevation Products (3DEP)                       elev~ &quot;Sep 9~ &quot;Sep 1~ &lt;df&gt;   
-##  5 Elevation Source Data (3DEP) - Lidar, IfSAR     elev~ &quot;Sep 9~ &quot;Sep 1~ &lt;df&gt;   
-##  6 Hydrography (NHDPlus HR, NHD, WBD)              hydr~ &quot;Sep 1~ &quot;Sep 1~ &lt;df&gt;   
-##  7 Imagery - NAIP Plus (1 meter to 1 foot)         imag~ &quot;Nov 2~ &quot;Sep 7~ &lt;df&gt;   
-##  8 Map Indices                                     map-~ &quot;Aug 1~ &quot;Aug 2~ &lt;df&gt;   
-##  9 Names - Geographic Names Information System (G~ name~ &quot;Jan 1~ &quot;Aug 9~ &lt;df&gt;   
-## 10 Small-scale Datasets                            smal~ &quot;Dec 6~ &quot;Jun 2~ &lt;df&gt;   
-## 11 Structures - National Structures Dataset        stru~ &quot;Aug 1~ &quot;Aug 3~ &lt;df&gt;   
-## 12 Topo Map Data and Topo Stylesheet               topo~ &quot;Aug 3~ &quot;Sep 3~ &lt;df&gt;   
-## 13 Topobathy - Elevation                           elev~ &quot;&quot;      &quot;&quot;      &lt;df&gt;   
-## 14 Transportation                                  tran~ &quot;Jul 1~ &quot;Jul 1~ &lt;df&gt;   
-## 15 Woodland Tint                                   wood~ &quot;Aug 2~ &quot;Sep 1~ &lt;df&gt;   
-## # ... with abbreviated variable names 1: lastPublishedDate, 2: lastUpdatedDate</code></pre>
-<p>The fifth item appears to be what we’re looking for. Let’s take a closer look.</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>datasets <span class="sc">%&gt;%</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(<span class="fu">str_detect</span>(title, <span class="st">&quot;Lidar&quot;</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select_if</span>(is.character) <span class="sc">%&gt;%</span> <span class="co"># Can&#39;t combine different types of variables in the same column</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">pivot_longer</span>(title<span class="sc">:</span>zipLink)</span></code></pre></div>
-<pre><code>## # A tibble: 18 x 2
-##    name                   value                                                 
-##    &lt;chr&gt;                  &lt;chr&gt;                                                 
-##  1 title                  &quot;Elevation Source Data (3DEP) - Lidar, IfSAR&quot;         
-##  2 sbDatasetTag           &quot;National Elevation Dataset (NED)&quot;                    
-##  3 parentCategory         &quot;Data&quot;                                                
-##  4 id                     &quot;elevation-source-data-lidar-isfar&quot;                   
-##  5 description            &quot;&quot;                                                    
-##  6 refreshCycle           &quot;Continuous&quot;                                          
-##  7 lastPublishedDate      &quot;Sep 9, 2019&quot;                                         
-##  8 lastUpdatedDate        &quot;Sep 11, 2019&quot;                                        
-##  9 dataGovUrl             &quot;&quot;                                                    
-## 10 infoUrl                &quot;https://www.usgs.gov/core-science-systems/ngp/3dep/a~
-## 11 thumbnailUrl           &quot;https://apps.nationalmap.gov/datasets/img/lpc_thumb.~
-## 12 mapServerUrl           &quot;https://index.nationalmap.gov/arcgis/rest/services/3~
-## 13 mapServerLinkShowTitle  &lt;NA&gt;                                                 
-## 14 mapServerLinkHideTitle  &lt;NA&gt;                                                 
-## 15 defaultExtent          &quot;Varies&quot;                                              
-## 16 descriptionLink         &lt;NA&gt;                                                 
-## 17 layerOpacity            &lt;NA&gt;                                                 
-## 18 zipLink                 &lt;NA&gt;</code></pre>
-<p>Not especially helpful. Well, anyways, I’ve been playing around on the user-friendly <a href="https://apps.nationalmap.gov/tnmaccess/#/product">API for data products</a> and have learned how to structure URL queries that way, so let’s move on to that.</p>
+<p>Initially, I used the dataset API but it was not especially helpful. It only has 15 items. Well, anyways, I’ve been playing around on the user-friendly <a href="https://apps.nationalmap.gov/tnmaccess/#/product">API for data products</a> and have learned how to target LiDAR products using URL queries that way, so let’s move on to that.</p>
 <h2 id="finding-lidar-data">Finding LiDAR data</h2>
+<p>The <a href="https://apps.nationalmap.gov/help/documents/TNMAccessAPIDocumentation/TNMAccessAPIDocumentation.pdf">guide to the TNM API</a> says that there are almost 4 million products available. Running the <a href="https://tnmaccess.nationalmap.gov/api/v1/products">products query with no arguments</a> suggests that that guide is out of date and there are in fact almost 13 million products available (upper left). Queries targeting LiDAR data specifically show that there are almost 7 million LiDAR products available, all but five of which are available in the common LAS or LAZ (compressed LAS) formats. Granted, most of these are small-ish rectangles that are components of a given project conducted by USGS or another agency.</p>
+<p>To begin moving towards a sensible dataset size, let’s restrict our search to the continental US (CONUS). Not that it helps all that much, seeing as there are still over 6 million products. A bounding box for the CONUS spans roughly 60 degrees of longitude (125° W to 65° W) and 30 degrees of latitude (20° N to 50° N), including a little bit of cushion.</p>
+<p>Let’s get our hands dirty. I’m going to pick a random 1°×1° box somewhere in the Western US and query all the LiDAR data it contains.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ptm <span class="ot">&lt;-</span> <span class="fu">proc.time</span>() <span class="co"># A timer will help assess the feasibility of upscaling</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Describe URL components for the query</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>root_url <span class="ot">&lt;-</span> <span class="st">&quot;https://tnmaccess.nationalmap.gov/api/v1/products?&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>bbox_url <span class="ot">&lt;-</span> <span class="st">&quot;bbox=-100,40,-99,41&quot;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>type_url <span class="ot">&lt;-</span> <span class="st">&quot;datasets=Lidar%20Point%20Cloud%20(LPC)&quot;</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>maxn_url <span class="ot">&lt;-</span> <span class="st">&quot;max=10000&quot;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>form_url <span class="ot">&lt;-</span> <span class="st">&quot;outputFormat=CSV&quot;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Open a connection to the server using the query</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="fu">url</span>(<span class="fu">paste0</span>(root_url,bbox_url,<span class="st">&quot;&amp;&quot;</span>,type_url,<span class="st">&quot;&amp;&quot;</span>,maxn_url,<span class="st">&quot;&amp;&quot;</span>,form_url))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Download the data from the server</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(url)</span></code></pre></div>
+<pre><code>## Rows: 1000 Columns: 25
+## -- Column specification --------------------------------------------------------
+## Delimiter: &quot;,&quot;
+## chr  (17): title, moreInfo, sourceId, sourceName, sourceOriginName, metaUrl,...
+## dbl   (2): sizeInBytes, bestFitIndex
+## lgl   (2): sourceOriginId, downloadURLRaster
+## dttm  (2): lastUpdated, dateCreated
+## date  (2): publicationDate, modificationInfo
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">proc.time</span>() <span class="sc">-</span> ptm <span class="co"># Calculate duration</span></span></code></pre></div>
+<pre><code>##    user  system elapsed 
+##    0.23    0.03    0.79</code></pre>
+<p>The API guide said that it was possible to get 10,000 results per page, but it appears that the limit is actually 1,000. Oh well.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>maxn_url_fixed <span class="ot">&lt;-</span> <span class="st">&quot;max=1000&quot;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>offset <span class="ot">&lt;-</span> <span class="dv">100</span> <span class="co"># Start with the 101st item</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>offset_url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;offset=&quot;</span>,offset)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Update the query</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="fu">url</span>(<span class="fu">paste0</span>(root_url,bbox_url,<span class="st">&quot;&amp;&quot;</span>,type_url,<span class="st">&quot;&amp;&quot;</span>,maxn_url_fixed,<span class="st">&quot;&amp;&quot;</span>,offset_url,<span class="st">&quot;&amp;&quot;</span>,form_url))</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Download data using the new query</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>data_check <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(url)</span></code></pre></div>
+<pre><code>## Rows: 1000 Columns: 25
+## -- Column specification --------------------------------------------------------
+## Delimiter: &quot;,&quot;
+## chr  (17): title, moreInfo, sourceId, sourceName, sourceOriginName, metaUrl,...
+## dbl   (2): sizeInBytes, bestFitIndex
+## lgl   (2): sourceOriginId, downloadURLRaster
+## dttm  (2): lastUpdated, dateCreated
+## date  (2): publicationDate, modificationInfo
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check how many items are shared in common between the two</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">intersect</span>(data<span class="sc">$</span>downloadURL, data_check<span class="sc">$</span>downloadURL)) <span class="co"># URLs are unique identifiers</span></span></code></pre></div>
+<pre><code>## [1] 900</code></pre>
+<p>As we’d expect, skipping 100 entries leaves 900 entries in common. Now let’s see if we can get all the data from our 1°×1° box into one table.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Specify our page size explicitly</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>max_n <span class="ot">&lt;-</span> <span class="dv">1000</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Also specify a break point for our loop for safety</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>break_n <span class="ot">&lt;-</span> <span class="fl">2e4</span> <span class="co"># i.e., 10,000</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Reset the offset</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>offset <span class="ot">&lt;-</span> <span class="dv">0</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>offset_url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;offset=&quot;</span>,offset)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>ptm <span class="ot">&lt;-</span> <span class="fu">proc.time</span>() <span class="co"># Start the timer</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Update the query</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>url <span class="ot">&lt;-</span> <span class="fu">url</span>(<span class="fu">paste0</span>(root_url,bbox_url,<span class="st">&quot;&amp;&quot;</span>,type_url,<span class="st">&quot;&amp;&quot;</span>,maxn_url_fixed,<span class="st">&quot;&amp;&quot;</span>,offset_url,<span class="st">&quot;&amp;&quot;</span>,form_url))</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a><span class="co"># Download the data</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>new_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(url)</span></code></pre></div>
+<pre><code>## Rows: 1000 Columns: 25
+## -- Column specification --------------------------------------------------------
+## Delimiter: &quot;,&quot;
+## chr  (17): title, moreInfo, sourceId, sourceName, sourceOriginName, metaUrl,...
+## dbl   (2): sizeInBytes, bestFitIndex
+## lgl   (2): sourceOriginId, downloadURLRaster
+## dttm  (2): lastUpdated, dateCreated
+## date  (2): publicationDate, modificationInfo
+## 
+## i Use `spec()` to retrieve the full column specification for this data.
+## i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a copy to compile data from multiple queries</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>data_all <span class="ot">&lt;-</span> new_data</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Query the server repeatedly until either a partial page of results is returned or the break point is reached</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressMessages</span>({ <span class="co"># Remove repeated, identical messages</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> (<span class="fu">nrow</span>(new_data) <span class="sc">==</span> max_n <span class="sc">&amp;</span> <span class="fu">nrow</span>(data_all) <span class="sc">&lt;=</span> break_n) {</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>        offset <span class="ot">&lt;-</span> offset <span class="sc">+</span> max_n</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>        offset_url <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">&quot;offset=&quot;</span>,offset)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>        url <span class="ot">&lt;-</span> <span class="fu">url</span>(<span class="fu">paste0</span>(root_url,bbox_url,<span class="st">&quot;&amp;&quot;</span>,type_url,<span class="st">&quot;&amp;&quot;</span>,maxn_url_fixed,<span class="st">&quot;&amp;&quot;</span>,offset_url,<span class="st">&quot;&amp;&quot;</span>,form_url))</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>        new_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(url)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>        data_all <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(data_all, new_data)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="fu">proc.time</span>() <span class="sc">-</span> ptm <span class="co"># This could be inaccurate because repeating a query yields results much faster</span></span></code></pre></div>
+<pre><code>##    user  system elapsed 
+##     0.4     0.0     4.0</code></pre>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(data_all) <span class="sc">==</span> <span class="fu">length</span>(<span class="fu">unique</span>(data_all<span class="sc">$</span>downloadURL)) <span class="co"># Check whether all results are unique</span></span></code></pre></div>
+<pre><code>## [1] TRUE</code></pre>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(data_all) <span class="co"># Total number of products in the box</span></span></code></pre></div>
+<pre><code>## [1] 10314</code></pre>
+<p>On the first go, getting 10,000 results took about 45 seconds. Round up to a minute and that suggests we could populate a table with all 7 million results in less than 12 hours, assuming that the TNM API doesn’t use DDoS-prevention technology. It sure would be nice if we could download the metadata in this API as a whole, which would take a fraction of the time, but you have to play the cards you’re dealt.</p>
+<h2 id="assessing-overlap-of-lidar-data">Assessing overlap of LiDAR data</h2>
 
 </body>
 </html>
