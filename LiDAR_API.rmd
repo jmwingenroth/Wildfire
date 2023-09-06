@@ -9,4 +9,29 @@ We seek to find areas where LiDAR data has been collected on two occasions. Even
 
 ## Approach
 
-I plan to use the R package from the [tidyverse](https://www.tidyverse.org) titled [httr](https://httr.r-lib.org/) to interact with the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The National Map](https://apps.nationalmap.gov/lidar-explorer/#/).
+I plan to use the R packages in the [tidyverse](https://www.tidyverse.org) to process data taken from the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The National Map](https://apps.nationalmap.gov/lidar-explorer/#/). Ultimately, interacting with URLs is performed using a package that ports [curl](https://curl.se/) over to R.
+
+```{r}
+
+# Load R packages
+library(tidyverse)
+library(jsonlite)
+library(curl)
+
+```
+
+## Finding a dataset
+
+We'll need to look at LiDAR products eventually, but to illustrate the general principle, let's be thorough and use the Datasets API to track down the LiDAR data:
+
+```{r}
+
+# Get datasets from the API and convert to a tidy table (tibble)
+datasets <- stream_in(url("https://tnmaccess.nationalmap.gov/api/v1/datasets")) %>%
+    tibble()
+
+colnames(datasets)
+
+```
+
+So, the Datasets API has provided us with quite a bit of information. Let's choose some variables that look promising.
