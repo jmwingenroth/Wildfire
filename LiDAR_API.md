@@ -23,6 +23,8 @@ I’ll leave in the package messages and metadata just in case they help
 down the road.
 
 ``` r
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.align = "center")
+
 # Load R packages
 library(tidyverse)
 ```
@@ -123,7 +125,7 @@ proc.time() - ptm # Calculate duration
 ```
 
     ##    user  system elapsed 
-    ##    0.11    0.03    0.82
+    ##    0.16    0.07    0.76
 
 The API guide said that it was possible to get 10,000 results per page,
 but it appears that the limit is actually 1,000. Oh well.
@@ -214,7 +216,7 @@ proc.time() - ptm # This could be inaccurate because repeating a query yields re
 ```
 
     ##    user  system elapsed 
-    ##    0.41    0.08    5.26
+    ##    0.42    0.08    5.59
 
 ``` r
 nrow(data_all) == length(unique(data_all$downloadURL)) # Check whether all results are unique
@@ -279,14 +281,14 @@ bbox_layer <- bboxes %>%
 ``` r
 # Plot the data
 bbox_layer %>%
-    ggplot(aes(fill = publicationDate)) +
-    geom_sf(alpha = .3, color = NA, show.legend = FALSE) +
-    scale_fill_viridis_c(trans = "date") +
+    ggplot(aes(fill = publicationDate)) + # Fill polygons according to publication date
+    geom_sf(color = NA, show.legend = FALSE) +
+    scale_fill_viridis_c(trans = "date", option = "turbo") + # Change color scale
     facet_wrap(~publicationDate) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-![](LiDAR_API_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 There are in fact data products published on seven different dates! The
 three publications in 2019 and 2020 are clearly all from the same

@@ -13,6 +13,8 @@ I plan to use the R packages in the [tidyverse](https://www.tidyverse.org) to pr
 
 ```{r}
 
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.align = "center")
+
 # Load R packages
 library(tidyverse)
 library(curl)
@@ -154,9 +156,9 @@ bbox_layer <- bboxes %>%
 
 # Plot the data
 bbox_layer %>%
-    ggplot(aes(fill = publicationDate)) +
-    geom_sf(alpha = .3, color = NA, show.legend = FALSE) +
-    scale_fill_viridis_c(trans = "date") +
+    ggplot(aes(fill = publicationDate)) + # Fill polygons according to publication date
+    geom_sf(color = NA, show.legend = FALSE) +
+    scale_fill_viridis_c(trans = "date", option = "turbo") + # Change color scale
     facet_wrap(~publicationDate) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
