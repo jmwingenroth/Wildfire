@@ -25,34 +25,25 @@ messages and metadata just in case they help down the road.
 library(tidyverse)
 ```
 
-    ## -- Attaching packages --------------------------------------- tidyverse 1.3.1 --
-
-    ## v ggplot2 3.3.6     v purrr   0.3.4
-    ## v tibble  3.1.6     v dplyr   1.0.8
-    ## v tidyr   1.2.0     v stringr 1.4.0
-    ## v readr   2.1.2     v forcats 0.5.1
-
-    ## Warning: package 'ggplot2' was built under R version 4.1.3
-
-    ## Warning: package 'tidyr' was built under R version 4.1.3
-
-    ## Warning: package 'readr' was built under R version 4.1.3
-
-    ## Warning: package 'dplyr' was built under R version 4.1.3
-
-    ## -- Conflicts ------------------------------------------ tidyverse_conflicts() --
-    ## x dplyr::filter() masks stats::filter()
-    ## x dplyr::lag()    masks stats::lag()
+    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+    ## ✔ dplyr     1.1.3     ✔ readr     2.1.4
+    ## ✔ forcats   1.0.0     ✔ stringr   1.5.0
+    ## ✔ ggplot2   3.4.3     ✔ tibble    3.2.1
+    ## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
+    ## ✔ purrr     1.0.2     
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
+    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 
 ``` r
 library(curl)
 ```
 
-    ## Using libcurl 7.64.1 with Schannel
-
+    ## Using libcurl 7.84.0 with Schannel
     ## 
     ## Attaching package: 'curl'
-
+    ## 
     ## The following object is masked from 'package:readr':
     ## 
     ##     parse_date
@@ -108,7 +99,7 @@ data <- read_csv(url)
 ```
 
     ## Rows: 1000 Columns: 25
-    ## -- Column specification --------------------------------------------------------
+    ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
     ## chr  (17): title, moreInfo, sourceId, sourceName, sourceOriginName, metaUrl,...
     ## dbl   (2): sizeInBytes, bestFitIndex
@@ -116,15 +107,15 @@ data <- read_csv(url)
     ## dttm  (2): lastUpdated, dateCreated
     ## date  (2): publicationDate, modificationInfo
     ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ``` r
 proc.time() - ptm # Calculate duration
 ```
 
     ##    user  system elapsed 
-    ##    0.23    0.03    0.79
+    ##    0.10    0.01    0.79
 
 The API guide said that it was possible to get 10,000 results per page,
 but it appears that the limit is actually 1,000. Oh well.
@@ -143,7 +134,7 @@ data_check <- read_csv(url)
 ```
 
     ## Rows: 1000 Columns: 25
-    ## -- Column specification --------------------------------------------------------
+    ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
     ## chr  (17): title, moreInfo, sourceId, sourceName, sourceOriginName, metaUrl,...
     ## dbl   (2): sizeInBytes, bestFitIndex
@@ -151,8 +142,8 @@ data_check <- read_csv(url)
     ## dttm  (2): lastUpdated, dateCreated
     ## date  (2): publicationDate, modificationInfo
     ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ``` r
 # Check how many items are shared in common between the two
@@ -185,7 +176,7 @@ new_data <- read_csv(url)
 ```
 
     ## Rows: 1000 Columns: 25
-    ## -- Column specification --------------------------------------------------------
+    ## ── Column specification ────────────────────────────────────────────────────────
     ## Delimiter: ","
     ## chr  (17): title, moreInfo, sourceId, sourceName, sourceOriginName, metaUrl,...
     ## dbl   (2): sizeInBytes, bestFitIndex
@@ -193,8 +184,8 @@ new_data <- read_csv(url)
     ## dttm  (2): lastUpdated, dateCreated
     ## date  (2): publicationDate, modificationInfo
     ## 
-    ## i Use `spec()` to retrieve the full column specification for this data.
-    ## i Specify the column types or set `show_col_types = FALSE` to quiet this message.
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 
 ``` r
 # Create a copy to compile data from multiple queries
@@ -215,7 +206,7 @@ proc.time() - ptm # This could be inaccurate because repeating a query yields re
 ```
 
     ##    user  system elapsed 
-    ##     0.4     0.0     4.0
+    ##    0.44    0.08    5.25
 
 ``` r
 nrow(data_all) == length(unique(data_all$downloadURL)) # Check whether all results are unique
@@ -231,9 +222,31 @@ nrow(data_all) # Total number of products in the box
 
 On the first go, getting 10,000 results took about 45 seconds. Round up
 to a minute and that suggests we could populate a table with all 7
-million results in less than 12 hours, assuming that the TNM API doesn’t
-use DDoS-prevention technology. It sure would be nice if we could
-download the metadata in this API as a whole, which would take a
-fraction of the time, but you have to play the cards you’re dealt.
+million results in less than 12 hours if we wanted to, assuming that the
+TNM API doesn’t use DDoS-prevention technology.
 
 ## Assessing overlap of LiDAR data
+
+Let’s see how often the data in our little box overlap. If overlap is
+limited, maybe we’ll need to zoom out to a bigger box.
+
+``` r
+# Extract minimum and maximum latitude and longitude from the boundingBox variable
+bboxes <- data_all %>%
+    select(publicationDate, box = boundingBox) %>% # Collection date does not appear to be available
+    separate(box, sep = "min|max", into = c(NA, "xmin", "xmax", "ymin", "ymax")) %>% # Split bounding-box column
+    mutate(across(xmin:ymax, ~str_extract(.x, "-?[0-9]+.[0-9]+"))) %>% # Extract numbers
+    mutate(across(xmin:ymax, as.numeric)) # Convert to numeric type
+
+# Assess total area covered by LiDAR data
+bboxes %>%
+    mutate(area = (xmax - xmin)*(ymax - ymin)) %>%
+    summarise(sum(area))
+```
+
+    ## # A tibble: 1 × 1
+    ##   `sum(area)`
+    ##         <dbl>
+    ## 1        2.08
+
+That is promising. Our box has an area of 1°$^2$
