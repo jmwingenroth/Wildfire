@@ -13,9 +13,9 @@ approach that Tony proposed.
 ## Approach
 
 I plan to use the R packages in the
-[tidyverse](https://www.tidyverse.org) to process data taken from the
-[web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The
-National Map](https://apps.nationalmap.gov/lidar-explorer/#/).
+[tidyverse](https://www.tidyverse.org) to process LiDAR data taken from
+the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by
+[The National Map](https://apps.nationalmap.gov/lidar-explorer/#/).
 Ultimately, interacting with URLs is performed using a package that
 ports [curl](https://curl.se/) over to R. I’ll also use
 [sf](https://r-spatial.github.io/sf/#cheatsheet) for spatial analysis.
@@ -125,7 +125,7 @@ proc.time() - ptm # Calculate duration
 ```
 
     ##    user  system elapsed 
-    ##    0.16    0.07    0.76
+    ##    0.11    0.00    6.50
 
 The API guide said that it was possible to get 10,000 results per page,
 but it appears that the limit is actually 1,000. Oh well.
@@ -216,7 +216,7 @@ proc.time() - ptm # This could be inaccurate because repeating a query yields re
 ```
 
     ##    user  system elapsed 
-    ##    0.42    0.08    5.59
+    ##    0.41    0.04   44.10
 
 ``` r
 nrow(data_all) == length(unique(data_all$downloadURL)) # Check whether all results are unique
@@ -293,11 +293,59 @@ bbox_layer %>%
 There are in fact data products published on seven different dates! The
 three publications in 2019 and 2020 are clearly all from the same
 dataset based on the shapes. But still, most of the box is covered at
-two timepoints, about five years apart.
+two timepoints, about five years apart. We’ll see how common this is
+going forward.
+
+## Fire data
+
+I got a
+[dataset](https://data-nifc.opendata.arcgis.com/datasets/nifc::historic-perimeters-combined-2000-2018-geomac/explore?location=39.096733%2C-96.133955%2C5.57)
+of fire perimeter shapefiles from the National Interagency Fire Center.
+If you want to run this code, which I otherwise (as of now) managed to
+make reproducible, you’ll have to download and unzip the same dataset
+first. I might consider adding some subset of it to the GitHub
+repository to make the code totally reproducible but the unedited
+database is too large to do so.
+
+``` r
+fires <- st_read("./data/Historic_Perimeters_Combined_2000-2018_GeoMAC/US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp")
+```
+
+    ## Reading layer `US_HIST_FIRE_PERIMTRS_2000_2018_DD83' from data source 
+    ##   `C:\Users\jwing\main\RFF\Wildfire\data\Historic_Perimeters_Combined_2000-2018_GeoMAC\US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp' 
+    ##   using driver `ESRI Shapefile'
+    ## Simple feature collection with 23776 features and 23 fields
+    ## Geometry type: MULTIPOLYGON
+    ## Dimension:     XY
+    ## Bounding box:  xmin: -178.8415 ymin: 3.386425 xmax: -65.33316 ymax: 70.15916
+    ## Geodetic CRS:  WGS 84
+
+``` r
+fires %>%
+    ggplot() +
+    geom_sf()
+```
+
+<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+
+``` r
+bboxes <- fires %>%
+    filter(gisacres > 2e5) %>%
+    group_by(uniquefire) %>%
+    filter(gisacres == max(gisacres)) %>%
+    transmute(bbox = st_as_sfc(st_bbox(geometry)))
+
+bboxes$bbox %>%
+    ggplot() +
+    geom_sf() +
+    theme_bw()
+```
+
+<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-7-2.png" style="display: block; margin: auto;" />
 
 ## Next steps
 
--   Scale up
 -   Focus on areas covered by fire perimeters
+-   Scale up
 -   Find cases where LiDAR publication dates sandwich fire perimeter
     dates

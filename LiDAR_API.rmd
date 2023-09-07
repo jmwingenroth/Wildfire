@@ -9,7 +9,7 @@ We seek to find areas where LiDAR data has been collected on two occasions. Even
 
 ## Approach
 
-I plan to use the R packages in the [tidyverse](https://www.tidyverse.org) to process data taken from the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The National Map](https://apps.nationalmap.gov/lidar-explorer/#/). Ultimately, interacting with URLs is performed using a package that ports [curl](https://curl.se/) over to R. I'll also use [sf](https://r-spatial.github.io/sf/#cheatsheet) for spatial analysis. I'll leave in the package messages and metadata just in case they help down the road.
+I plan to use the R packages in the [tidyverse](https://www.tidyverse.org) to process LiDAR data taken from the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The National Map](https://apps.nationalmap.gov/lidar-explorer/#/). Ultimately, interacting with URLs is performed using a package that ports [curl](https://curl.se/) over to R. I'll also use [sf](https://r-spatial.github.io/sf/#cheatsheet) for spatial analysis. I'll leave in the package messages and metadata just in case they help down the road.
 
 ```{r}
 
@@ -164,10 +164,35 @@ bbox_layer %>%
 
 ```
 
-There are in fact data products published on seven different dates! The three publications in 2019 and 2020 are clearly all from the same dataset based on the shapes. But still, most of the box is covered at two timepoints, about five years apart.
+There are in fact data products published on seven different dates! The three publications in 2019 and 2020 are clearly all from the same dataset based on the shapes. But still, most of the box is covered at two timepoints, about five years apart. We'll see how common this is going forward.
+
+## Fire data
+
+Fire perimeters are sourced from the National Interagency Fire Center's [GIS Explorer](https://data-nifc.opendata.arcgis.com/datasets/nifc::historic-perimeters-combined-2000-2018-geomac/explore?location=39.096733%2C-96.133955%2C5.57).
+
+```{r}
+
+# Read fire data, which is local for now but could be uploaded to a cloud server if we want full reproducibility
+fires <- st_read("./data/Historic_Perimeters_Combined_2000-2018_GeoMAC/US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp")
+
+# Get 
+bboxes <- fires %>%
+    filter(gisacres > 2e5) %>%
+    group_by(uniquefire, incidentna) %>%
+    filter(gisacres == max(gisacres)) %>%
+    transmute(bbox = st_as_sfc(st_bbox(geometry)))
+
+bboxes$bbox %>%
+    ggplot() +
+    geom_sf() +
+    theme_bw()
+
+View(bboxes)
+
+```
 
 ## Next steps
 
-- Scale up
 - Focus on areas covered by fire perimeters
+- Scale up
 - Find cases where LiDAR publication dates sandwich fire perimeter dates
