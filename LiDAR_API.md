@@ -58,6 +58,28 @@ library(sf)
 
     ## Linking to GEOS 3.11.2, GDAL 3.6.2, PROJ 9.2.0; sf_use_s2() is TRUE
 
+``` r
+library(spData)
+```
+
+    ## The legacy packages maptools, rgdal, and rgeos, underpinning the sp package,
+    ## which was just loaded, will retire in October 2023.
+    ## Please refer to R-spatial evolution reports for details, especially
+    ## https://r-spatial.org/r/2023/05/15/evolution4.html.
+    ## It may be desirable to make the sf package available;
+    ## package maintainers should consider adding sf to Suggests:.
+    ## The sp package is now running under evolution status 2
+    ##      (status 2 uses the sf package in place of rgdal)
+    ## To access larger datasets in this package, install the spDataLarge
+    ## package with: `install.packages('spDataLarge',
+    ## repos='https://nowosad.github.io/drat/', type='source')`
+
+``` r
+sf_use_s2(FALSE) # Turn off spherical geometry
+```
+
+    ## Spherical geometry (s2) switched off
+
 ## Finding a dataset
 
 Initially, I used the dataset API but it was not especially helpful. It
@@ -125,7 +147,7 @@ proc.time() - ptm # Calculate duration
 ```
 
     ##    user  system elapsed 
-    ##    0.11    0.00    6.50
+    ##    0.16    0.03    0.83
 
 The API guide said that it was possible to get 10,000 results per page,
 but it appears that the limit is actually 1,000. Oh well.
@@ -216,7 +238,7 @@ proc.time() - ptm # This could be inaccurate because repeating a query yields re
 ```
 
     ##    user  system elapsed 
-    ##    0.41    0.04   44.10
+    ##    0.57    0.14    5.47
 
 ``` r
 nrow(data_all) == length(unique(data_all$downloadURL)) # Check whether all results are unique
@@ -298,16 +320,12 @@ going forward.
 
 ## Fire data
 
-I got a
-[dataset](https://data-nifc.opendata.arcgis.com/datasets/nifc::historic-perimeters-combined-2000-2018-geomac/explore?location=39.096733%2C-96.133955%2C5.57)
-of fire perimeter shapefiles from the National Interagency Fire Center.
-If you want to run this code, which I otherwise (as of now) managed to
-make reproducible, you’ll have to download and unzip the same dataset
-first. I might consider adding some subset of it to the GitHub
-repository to make the code totally reproducible but the unedited
-database is too large to do so.
+Fire perimeters are sourced from the National Interagency Fire Center’s
+[GIS
+Explorer](https://data-nifc.opendata.arcgis.com/datasets/nifc::historic-perimeters-combined-2000-2018-geomac/explore?location=39.096733%2C-96.133955%2C5.57).
 
 ``` r
+# Read fire data, which is local for now but could be uploaded to a cloud server if we want full reproducibility
 fires <- st_read("./data/Historic_Perimeters_Combined_2000-2018_GeoMAC/US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp")
 ```
 
@@ -321,27 +339,31 @@ fires <- st_read("./data/Historic_Perimeters_Combined_2000-2018_GeoMAC/US_HIST_F
     ## Geodetic CRS:  WGS 84
 
 ``` r
-fires %>%
+# Get bounding boxes for the largest fires in the dataset
+bboxes <- fires %>%
+    filter(gisacres > 1e5) %>%
+    group_by(uniquefire, incidentna) %>%
+    filter(gisacres == max(gisacres)) %>%
+    transmute(bbox = st_as_sfc(st_bbox(geometry))) %>%
+    st_crop(c(xmin = -140, xmax = -60, ymin = 0, ymax = 50)) # Drop Alaska fires
+```
+
+    ## although coordinates are longitude/latitude, st_intersection assumes that they
+    ## are planar
+
+    ## Warning: attribute variables are assumed to be spatially constant throughout
+    ## all geometries
+
+``` r
+# Plot those fires and those bounding boxes
+bboxes$bbox %>%
     ggplot() +
-    geom_sf()
+    geom_sf(data = spData::us_states, fill = "white") +
+    geom_sf(color = "blue", fill = NA) +
+    geom_sf(data = bboxes, fill = "red", color = NA)
 ```
 
 <img src="LiDAR_API_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
-
-``` r
-bboxes <- fires %>%
-    filter(gisacres > 2e5) %>%
-    group_by(uniquefire) %>%
-    filter(gisacres == max(gisacres)) %>%
-    transmute(bbox = st_as_sfc(st_bbox(geometry)))
-
-bboxes$bbox %>%
-    ggplot() +
-    geom_sf() +
-    theme_bw()
-```
-
-<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-7-2.png" style="display: block; margin: auto;" />
 
 ## Next steps
 

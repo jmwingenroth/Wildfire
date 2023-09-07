@@ -19,6 +19,9 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.align = "center")
 library(tidyverse)
 library(curl)
 library(sf)
+library(spData)
+
+sf_use_s2(FALSE) # Turn off spherical geometry
 
 ```
 
@@ -175,19 +178,21 @@ Fire perimeters are sourced from the National Interagency Fire Center's [GIS Exp
 # Read fire data, which is local for now but could be uploaded to a cloud server if we want full reproducibility
 fires <- st_read("./data/Historic_Perimeters_Combined_2000-2018_GeoMAC/US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp")
 
-# Get 
+# Get bounding boxes for the largest fires in the dataset
 bboxes <- fires %>%
-    filter(gisacres > 2e5) %>%
+    filter(gisacres > 1e5) %>%
     group_by(uniquefire, incidentna) %>%
     filter(gisacres == max(gisacres)) %>%
-    transmute(bbox = st_as_sfc(st_bbox(geometry)))
+    transmute(bbox = st_as_sfc(st_bbox(geometry))) %>%
+    st_crop(c(xmin = -140, xmax = -60, ymin = 0, ymax = 50)) # Drop Alaska fires
 
+
+# Plot those fires and those bounding boxes
 bboxes$bbox %>%
     ggplot() +
-    geom_sf() +
-    theme_bw()
-
-View(bboxes)
+    geom_sf(data = spData::us_states, fill = "white") +
+    geom_sf(color = "blue", fill = NA) +
+    geom_sf(data = bboxes, fill = "red", color = NA)
 
 ```
 
