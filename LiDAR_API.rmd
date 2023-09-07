@@ -9,13 +9,14 @@ We seek to find areas where LiDAR data has been collected on two occasions. Even
 
 ## Approach
 
-I plan to use the R packages in the [tidyverse](https://www.tidyverse.org) to process data taken from the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The National Map](https://apps.nationalmap.gov/lidar-explorer/#/). Ultimately, interacting with URLs is performed using a package that ports [curl](https://curl.se/) over to R. I'll leave in the package messages and metadata just in case they help down the road.
+I plan to use the R packages in the [tidyverse](https://www.tidyverse.org) to process data taken from the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The National Map](https://apps.nationalmap.gov/lidar-explorer/#/). Ultimately, interacting with URLs is performed using a package that ports [curl](https://curl.se/) over to R. I'll also use [sf](https://r-spatial.github.io/sf/#cheatsheet) for spatial analysis. I'll leave in the package messages and metadata just in case they help down the road.
 
 ```{r}
 
 # Load R packages
 library(tidyverse)
 library(curl)
+library(sf)
 
 ```
 
@@ -126,7 +127,7 @@ Let's see how often the data in our little box overlap. If overlap is limited, m
 
 # Extract minimum and maximum latitude and longitude from the boundingBox variable
 bboxes <- data_all %>%
-    select(publicationDate, box = boundingBox) %>% # Collection date does not appear to be available
+    select(downloadURL, publicationDate, box = boundingBox) %>% # Collection date does not appear to be available
     separate(box, sep = "min|max", into = c(NA, "xmin", "xmax", "ymin", "ymax")) %>% # Split bounding-box column
     mutate(across(xmin:ymax, ~str_extract(.x, "-?[0-9]+.[0-9]+"))) %>% # Extract numbers
     mutate(across(xmin:ymax, as.numeric)) # Convert to numeric type
@@ -138,4 +139,33 @@ bboxes %>%
 
 ```
 
-That is promising. Our box has an area of 1&deg;$^2$
+That is promising. Our random box has an area of 1&deg; squared, but contains about 2&deg; squared worth of LiDAR data. Granted, these are bounding boxes so coverage is not guaranteed, but most LiDAR products from The National Map are rectangular, at least in my experience.
+
+```{r}
+
+# Convert the bounding boxes to a spatial object
+bbox_layer <- bboxes %>%
+    pivot_longer(c(xmin, xmax), names_to = "x", values_to = "lon") %>% # This and the next command
+    pivot_longer(c(ymin, ymax), names_to = "y", values_to = "lat") %>% # create rows for each corner
+    group_by(downloadURL, publicationDate) %>%
+    # Create convex polygons (rectangles) from each set of four corners
+    summarise(geometry = st_convex_hull(st_sfc(st_cast(st_multipoint(cbind(lon, lat)), 'POLYGON')))) %>% 
+    st_sf() # Convert the tibble to a simple feature collection (sf type)
+
+# Plot the data
+bbox_layer %>%
+    ggplot(aes(fill = publicationDate)) +
+    geom_sf(alpha = .3, color = NA, show.legend = FALSE) +
+    scale_fill_viridis_c(trans = "date") +
+    facet_wrap(~publicationDate) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+There are in fact data products published on seven different dates! The three publications in 2019 and 2020 are clearly all from the same dataset based on the shapes. But still, most of the box is covered at two timepoints, about five years apart.
+
+## Next steps
+
+- Scale up
+- Focus on areas covered by fire perimeters
+- Find cases where LiDAR publication dates sandwich fire perimeter dates

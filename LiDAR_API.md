@@ -17,8 +17,10 @@ I plan to use the R packages in the
 [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The
 National Map](https://apps.nationalmap.gov/lidar-explorer/#/).
 Ultimately, interacting with URLs is performed using a package that
-ports [curl](https://curl.se/) over to R. I’ll leave in the package
-messages and metadata just in case they help down the road.
+ports [curl](https://curl.se/) over to R. I’ll also use
+[sf](https://r-spatial.github.io/sf/#cheatsheet) for spatial analysis.
+I’ll leave in the package messages and metadata just in case they help
+down the road.
 
 ``` r
 # Load R packages
@@ -47,6 +49,12 @@ library(curl)
     ## The following object is masked from 'package:readr':
     ## 
     ##     parse_date
+
+``` r
+library(sf)
+```
+
+    ## Linking to GEOS 3.11.2, GDAL 3.6.2, PROJ 9.2.0; sf_use_s2() is TRUE
 
 ## Finding a dataset
 
@@ -115,7 +123,7 @@ proc.time() - ptm # Calculate duration
 ```
 
     ##    user  system elapsed 
-    ##    0.10    0.01    0.79
+    ##    0.11    0.03    0.82
 
 The API guide said that it was possible to get 10,000 results per page,
 but it appears that the limit is actually 1,000. Oh well.
@@ -206,7 +214,7 @@ proc.time() - ptm # This could be inaccurate because repeating a query yields re
 ```
 
     ##    user  system elapsed 
-    ##    0.44    0.08    5.25
+    ##    0.41    0.08    5.26
 
 ``` r
 nrow(data_all) == length(unique(data_all$downloadURL)) # Check whether all results are unique
@@ -233,7 +241,7 @@ limited, maybe we’ll need to zoom out to a bigger box.
 ``` r
 # Extract minimum and maximum latitude and longitude from the boundingBox variable
 bboxes <- data_all %>%
-    select(publicationDate, box = boundingBox) %>% # Collection date does not appear to be available
+    select(downloadURL, publicationDate, box = boundingBox) %>% # Collection date does not appear to be available
     separate(box, sep = "min|max", into = c(NA, "xmin", "xmax", "ymin", "ymax")) %>% # Split bounding-box column
     mutate(across(xmin:ymax, ~str_extract(.x, "-?[0-9]+.[0-9]+"))) %>% # Extract numbers
     mutate(across(xmin:ymax, as.numeric)) # Convert to numeric type
@@ -249,4 +257,45 @@ bboxes %>%
     ##         <dbl>
     ## 1        2.08
 
-That is promising. Our box has an area of 1°$^2$
+That is promising. Our random box has an area of 1° squared, but
+contains about 2° squared worth of LiDAR data. Granted, these are
+bounding boxes so coverage is not guaranteed, but most LiDAR products
+from The National Map are rectangular, at least in my experience.
+
+``` r
+# Convert the bounding boxes to a spatial object
+bbox_layer <- bboxes %>%
+    pivot_longer(c(xmin, xmax), names_to = "x", values_to = "lon") %>% # This and the next command
+    pivot_longer(c(ymin, ymax), names_to = "y", values_to = "lat") %>% # create rows for each corner
+    group_by(downloadURL, publicationDate) %>%
+    # Create convex polygons (rectangles) from each set of four corners
+    summarise(geometry = st_convex_hull(st_sfc(st_cast(st_multipoint(cbind(lon, lat)), 'POLYGON')))) %>% 
+    st_sf() # Convert the tibble to a simple feature collection (sf type)
+```
+
+    ## `summarise()` has grouped output by 'downloadURL'. You can override using the
+    ## `.groups` argument.
+
+``` r
+# Plot the data
+bbox_layer %>%
+    ggplot(aes(fill = publicationDate)) +
+    geom_sf(alpha = .3, color = NA, show.legend = FALSE) +
+    scale_fill_viridis_c(trans = "date") +
+    facet_wrap(~publicationDate) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+![](LiDAR_API_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+There are in fact data products published on seven different dates! The
+three publications in 2019 and 2020 are clearly all from the same
+dataset based on the shapes. But still, most of the box is covered at
+two timepoints, about five years apart.
+
+## Next steps
+
+-   Scale up
+-   Focus on areas covered by fire perimeters
+-   Find cases where LiDAR publication dates sandwich fire perimeter
+    dates
