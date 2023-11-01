@@ -127,7 +127,7 @@ fires %>%
 There were quite a few. They generally seem to match the map from Tony,
 with the exception of a few older (yellow) fires:
 
-![](data/tony_map.png)
+![](images/tony_map.png)
 
 The most noticeable omission is the Wrights (Wright’s?) Creek fire of
 1950. We could probably add perimeter data for this fire if necessary,
