@@ -1,26 +1,33 @@
-LiDAR API
+LiDAR and Wildfire Data
 ================
+Last updated by Jordan Wingenroth on
+11/01/23
 
 ## Goal
 
-We seek to find areas where LiDAR data has been collected on two
-occasions. Eventually, we will use fire perimeter data to find areas
-where LiDAR was collected before and after a fire. That might allow us
-some insight into the effects of fire on the properties of vegetation
-and particularly underbrush, potentially using the machine-learning
-approach that Tony proposed.
+We seek to find areas where LiDAR data were collected before and after a
+fire. That might allow us some insight into the effects of fire on the
+properties of vegetation canopy, underbrush, and other layers. It is
+possible we could do so using the machine-learning approach that Tony
+proposed.
 
 ## Approach
 
-I plan to use the R packages in the
-[tidyverse](https://www.tidyverse.org) to process LiDAR data taken from
-the [web API](https://apps.nationalmap.gov/tnmaccess/#/) provided by
-[The National Map](https://apps.nationalmap.gov/lidar-explorer/#/).
-Ultimately, interacting with URLs is performed using a package that
-ports [curl](https://curl.se/) over to R. I’ll also use
-[sf](https://r-spatial.github.io/sf/#cheatsheet) for spatial analysis.
-I’ll leave in the package messages and metadata just in case they help
-down the road.
+Fire perimeters are sourced from the National Interagency Fire Center’s
+[GIS
+Explorer](https://data-nifc.opendata.arcgis.com/datasets/nifc::historic-perimeters-combined-2000-2018-geomac/explore?location=39.096733%2C-96.133955%2C5.57).
+LiDAR data come from the [web
+API](https://apps.nationalmap.gov/tnmaccess/#/) provided by [The
+National Map](https://apps.nationalmap.gov/lidar-explorer/#/). I plan to
+use the R packages in the [tidyverse](https://www.tidyverse.org) to
+process these data, also using [curl](https://curl.se/) to pull data
+down from the web and [sf](https://r-spatial.github.io/sf/#cheatsheet)
+for spatial analysis. I’ll leave in the package messages and metadata
+just in case they help down the road.
+
+The general approach is to create a GIS layer of bounding boxes for
+large fires, use those bounding boxes to query the LiDAR API for data,
+and then assess the overlap of pre-fire and post-fire LiDAR data.
 
 ``` r
 knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.align = "center")
@@ -59,7 +66,7 @@ library(sf)
     ## Linking to GEOS 3.11.2, GDAL 3.6.2, PROJ 9.2.0; sf_use_s2() is TRUE
 
 ``` r
-library(spData)
+library(spData) # Background maps
 ```
 
     ## The legacy packages maptools, rgdal, and rgeos, underpinning the sp package,
@@ -80,16 +87,50 @@ sf_use_s2(FALSE) # Turn off spherical geometry
 
     ## Spherical geometry (s2) switched off
 
-## Finding a dataset
+## Fire data
 
-Initially, I used the dataset API but it was not especially helpful. It
-only has 15 items. Well, anyways, I’ve been playing around on the
-user-friendly [API for data
-products](https://apps.nationalmap.gov/tnmaccess/#/product) and have
-learned how to target LiDAR products using URL queries that way, so
-let’s move on to that.
+``` r
+# Read fire data, which is local for now but could be uploaded to a cloud server if we want full reproducibility
+fires <- st_read("./data/Historic_Perimeters_Combined_2000-2018_GeoMAC/US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp")
+```
 
-## Finding LiDAR data
+    ## Reading layer `US_HIST_FIRE_PERIMTRS_2000_2018_DD83' from data source 
+    ##   `C:\Users\jwing\main\RFF\Wildfire\data\Historic_Perimeters_Combined_2000-2018_GeoMAC\US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp' 
+    ##   using driver `ESRI Shapefile'
+    ## Simple feature collection with 23776 features and 23 fields
+    ## Geometry type: MULTIPOLYGON
+    ## Dimension:     XY
+    ## Bounding box:  xmin: -178.8415 ymin: 3.386425 xmax: -65.33316 ymax: 70.15916
+    ## Geodetic CRS:  WGS 84
+
+``` r
+# Get bounding boxes for the largest fires in the dataset
+bboxes <- fires %>%
+    filter(gisacres > 1e5) %>%
+    group_by(uniquefire, incidentna) %>%
+    filter(gisacres == max(gisacres)) %>%
+    transmute(bbox = st_as_sfc(st_bbox(geometry))) %>%
+    st_crop(c(xmin = -140, xmax = -60, ymin = 0, ymax = 50)) # Drop Alaska fires for now
+```
+
+    ## although coordinates are longitude/latitude, st_intersection assumes that they
+    ## are planar
+
+    ## Warning: attribute variables are assumed to be spatially constant throughout
+    ## all geometries
+
+``` r
+# Plot those fires and those bounding boxes
+bboxes$bbox %>%
+    ggplot() +
+    geom_sf(data = spData::us_states, fill = "white") + # Background map
+    geom_sf(color = "blue", fill = NA) +
+    geom_sf(data = bboxes, fill = "red", color = NA)
+```
+
+<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+
+## LiDAR data
 
 The [guide to the TNM
 API](https://apps.nationalmap.gov/help/documents/TNMAccessAPIDocumentation/TNMAccessAPIDocumentation.pdf)
@@ -104,6 +145,67 @@ available, all but five of which are available in the common LAS or LAZ
 rectangles that are components of a given project conducted by USGS or
 another agency.
 
+The maximum page size of the LiDAR API appears to be 1,000 records.
+Multiple queries with an increasing offset variable can be used to
+collect more than 1,000 records for a set of other constraints. For each
+of the large fires shown above, I will query LiDAR data that intersects
+its bounding box. I’m not sure if polygons that cross the boxes’
+boundaries will be included or excluded but LiDAR extents tend to be
+small relative to these fire perimeters in my experience.
+
+``` r
+# Specify our page size (I found this to be the maximum page size available)
+max_n <- 1000
+
+# Create an offset variable to advance from page to page
+offset <- 0
+offset_url <- paste0("offset=",offset)
+
+# Also specify a break point to avoid a runaway while loop
+break_n <- 0 # will increase
+
+# Describe URL components for the query
+root_url <- "https://tnmaccess.nationalmap.gov/api/v1/products?"
+bbox_url <- "bbox=-100,40,-99,41"
+type_url <- "datasets=Lidar%20Point%20Cloud%20(LPC)"
+maxn_url <- "max=1000"
+form_url <- "outputFormat=CSV"
+
+# Update the query
+url <- url(paste0(root_url,bbox_url,"&",type_url,"&",maxn_url,"&",offset_url,"&",form_url))
+
+# Download the data
+new_data <- read_csv(url)
+```
+
+    ## Rows: 1000 Columns: 25
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr  (17): title, moreInfo, sourceId, sourceName, sourceOriginName, metaUrl,...
+    ## dbl   (2): sizeInBytes, bestFitIndex
+    ## lgl   (2): sourceOriginId, downloadURLRaster
+    ## dttm  (2): lastUpdated, dateCreated
+    ## date  (2): publicationDate, modificationInfo
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+# Create a copy to compile data from multiple queries
+data_all <- new_data
+
+# Query the server repeatedly until either a partial page of results is returned or the break point is reached
+suppressMessages({ # Remove repeated, identical messages
+    while (nrow(new_data) == max_n & nrow(data_all) <= break_n) {
+        offset <- offset + max_n
+        offset_url <- paste0("offset=",offset)
+        url <- url(paste0(root_url,bbox_url,"&",type_url,"&",maxn_url_fixed,"&",offset_url,"&",form_url))
+        new_data <- read_csv(url)
+        data_all <- bind_rows(data_all, new_data)
+    }
+})
+```
+
 To begin moving towards a sensible dataset size, let’s restrict our
 search to the continental US (CONUS). Not that it helps all that much,
 seeing as there are still over 6 million products. A bounding box for
@@ -116,12 +218,6 @@ somewhere in the Western US and query all the LiDAR data it contains.
 ``` r
 ptm <- proc.time() # A timer will help assess the feasibility of upscaling
 
-# Describe URL components for the query
-root_url <- "https://tnmaccess.nationalmap.gov/api/v1/products?"
-bbox_url <- "bbox=-100,40,-99,41"
-type_url <- "datasets=Lidar%20Point%20Cloud%20(LPC)"
-maxn_url <- "max=10000"
-form_url <- "outputFormat=CSV"
 
 # Open a connection to the server using the query
 url <- url(paste0(root_url,bbox_url,"&",type_url,"&",maxn_url,"&",form_url))
@@ -147,7 +243,7 @@ proc.time() - ptm # Calculate duration
 ```
 
     ##    user  system elapsed 
-    ##    0.16    0.03    0.83
+    ##    0.05    0.00   13.36
 
 The API guide said that it was possible to get 10,000 results per page,
 but it appears that the limit is actually 1,000. Oh well.
@@ -188,9 +284,6 @@ As we’d expect, skipping 100 entries leaves 900 entries in common. Now
 let’s see if we can get all the data from our 1°×1° box into one table.
 
 ``` r
-# Specify our page size explicitly
-max_n <- 1000
-
 # Also specify a break point for our loop for safety
 break_n <- 2e4 # i.e., 10,000
 
@@ -238,7 +331,7 @@ proc.time() - ptm # This could be inaccurate because repeating a query yields re
 ```
 
     ##    user  system elapsed 
-    ##    0.57    0.14    5.47
+    ##    0.86    0.08   39.77
 
 ``` r
 nrow(data_all) == length(unique(data_all$downloadURL)) # Check whether all results are unique
@@ -310,7 +403,7 @@ bbox_layer %>%
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
 
 There are in fact data products published on seven different dates! The
 three publications in 2019 and 2020 are clearly all from the same
@@ -318,56 +411,8 @@ dataset based on the shapes. But still, most of the box is covered at
 two timepoints, about five years apart. We’ll see how common this is
 going forward.
 
-## Fire data
-
-Fire perimeters are sourced from the National Interagency Fire Center’s
-[GIS
-Explorer](https://data-nifc.opendata.arcgis.com/datasets/nifc::historic-perimeters-combined-2000-2018-geomac/explore?location=39.096733%2C-96.133955%2C5.57).
-
-``` r
-# Read fire data, which is local for now but could be uploaded to a cloud server if we want full reproducibility
-fires <- st_read("./data/Historic_Perimeters_Combined_2000-2018_GeoMAC/US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp")
-```
-
-    ## Reading layer `US_HIST_FIRE_PERIMTRS_2000_2018_DD83' from data source 
-    ##   `C:\Users\jwing\main\RFF\Wildfire\data\Historic_Perimeters_Combined_2000-2018_GeoMAC\US_HIST_FIRE_PERIMTRS_2000_2018_DD83.shp' 
-    ##   using driver `ESRI Shapefile'
-    ## Simple feature collection with 23776 features and 23 fields
-    ## Geometry type: MULTIPOLYGON
-    ## Dimension:     XY
-    ## Bounding box:  xmin: -178.8415 ymin: 3.386425 xmax: -65.33316 ymax: 70.15916
-    ## Geodetic CRS:  WGS 84
-
-``` r
-# Get bounding boxes for the largest fires in the dataset
-bboxes <- fires %>%
-    filter(gisacres > 1e5) %>%
-    group_by(uniquefire, incidentna) %>%
-    filter(gisacres == max(gisacres)) %>%
-    transmute(bbox = st_as_sfc(st_bbox(geometry))) %>%
-    st_crop(c(xmin = -140, xmax = -60, ymin = 0, ymax = 50)) # Drop Alaska fires
-```
-
-    ## although coordinates are longitude/latitude, st_intersection assumes that they
-    ## are planar
-
-    ## Warning: attribute variables are assumed to be spatially constant throughout
-    ## all geometries
-
-``` r
-# Plot those fires and those bounding boxes
-bboxes$bbox %>%
-    ggplot() +
-    geom_sf(data = spData::us_states, fill = "white") +
-    geom_sf(color = "blue", fill = NA) +
-    geom_sf(data = bboxes, fill = "red", color = NA)
-```
-
-<img src="LiDAR_API_files/figure-gfm/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
-
 ## Next steps
 
--   Focus on areas covered by fire perimeters
--   Scale up
--   Find cases where LiDAR publication dates sandwich fire perimeter
-    dates
+- Focus on areas covered by fire perimeters
+- Scale up
+- Find cases where LiDAR publication dates sandwich fire perimeter dates
