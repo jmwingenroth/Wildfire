@@ -7,9 +7,11 @@ output: github_document
 
 ## Environment info
 
-```{r}
+This version was set to exclude code for brevity.
 
-knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.align = "center")
+```{r echo = FALSE}
+
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.align = "center", echo = FALSE)
 
 # Load R packages
 library(tidyverse)
