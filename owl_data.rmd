@@ -1,0 +1,65 @@
+---
+title: "Mapping source year for spotted owl predicted habitat"
+author: "Last updated by Jordan Wingenroth on "
+date: "`r format(Sys.time(), '%D')`"
+output: github_document
+---
+
+## Environment info
+
+Code excluded here for brevity.
+
+```{r echo = FALSE}
+
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.align = "center")
+
+# Load R packages
+library(tidyverse)
+library(curl)
+library(sf)
+library(spData) # Background maps
+
+sf_use_s2(FALSE) # Turn off spherical geometry
+
+```
+
+## When were the data informing spotted owl habitat preference collected?
+
+Our goal was to make sure that the dataset we use to predict spotted owl habitat preference is not informed by landscape changes caused by the Rim Fire.
+
+Data were sourced [here](https://map.dfg.ca.gov/metadata/ds2185.html).
+
+Some legwork was required because of the formatting of the data. I was unable to access the geospatial data in R initially, and when I tried GIS, I was unable to use the other variables. I converted the raster to a vector file in GIS, dropping the other attributes, and now I'll join them back up in R. I clipped to the area around the Rim Fire for the conversion because converting the whole state of California took too long. Ultimately, all that was needed in R was a test for the latest year in this subset.
+
+```{r}
+
+owl_vat <- st_read("./data/owl_raster/ds2185.gdb", layer = "VAT_ds2185") %>%
+    tibble()
+
+owl_shp <- st_read("./data/owl_raster/owl_raster_key.shp")
+
+owl_vat %>%
+    filter(Value %in% owl_shp$VALUE) %>%
+    mutate(year = as.numeric(SOURCE_YEAR)) %>%
+    summarise(max(year))
+
+```
+
+A value of less than 2013 indicates that we don't need to worry about the Rim Fire affecting our spotted owl habitat preference data.
+
+I'll verify that the subset of the owl data covers the vicinity of the Rim Fire. Doing anything with the super-high-resolution `owl_shp` point data takes forever so I am going to subsample it randomly to get a general idea of its spatial range.
+
+```{r}
+
+fires <- st_read("./data/CA_fire_perimeters/California_Fire_Perimeters__all_.shp")
+
+rim <- fires %>%
+    filter(FIRE_NAME == "RIM", YEAR_ == 2013)
+
+owl_shp[sample(1:nrow(owl_shp), 1e4),] %>%
+    ggplot() +
+    geom_sf() +
+    geom_sf(data = rim, fill = "red", alpha = .5) +
+    theme_bw()
+
+```
