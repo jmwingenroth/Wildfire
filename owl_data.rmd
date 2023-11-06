@@ -18,6 +18,7 @@ library(tidyverse)
 library(curl)
 library(sf)
 library(spData) # Background maps
+library(stars)
 
 sf_use_s2(FALSE) # Turn off spherical geometry
 
@@ -61,5 +62,21 @@ owl_shp[sample(1:nrow(owl_shp), 1e4),] %>%
     geom_sf() +
     geom_sf(data = rim, fill = "red", alpha = .5) +
     theme_bw()
+
+```
+
+Tony asked for the owl habitat quality data, and I suggested a raster format to help with compression. It's important to note the coordinate reference system from the original shapefile: "NAD83 / California Albers". I don't believe this information will be included in the raster (.tif) file.
+
+```{r}
+
+owl_big <- left_join(owl_shp, owl_vat, by = c("VALUE" = "Value"))
+
+owl_tidy <- owl_big %>%
+    filter(NAME == "SPOTTED OWL") %>%
+    select(quality = MEAN, geometry)
+
+owl_raster <- st_rasterize(owl_tidy)
+
+write_stars(owl_raster, "output/owl_habitat_quality_near_Rim.tif")
 
 ```

@@ -1,7 +1,7 @@
 Mapping source year for spotted owl predicted habitat
 ================
 Last updated by Jordan Wingenroth on
-11/01/23
+11/06/23
 
 ## Environment info
 
@@ -42,7 +42,10 @@ Code excluded here for brevity.
     ## To access larger datasets in this package, install the spDataLarge
     ## package with: `install.packages('spDataLarge',
     ## repos='https://nowosad.github.io/drat/', type='source')`
-    ## 
+
+    ## Warning: package 'stars' was built under R version 4.3.2
+
+    ## Loading required package: abind
     ## Spherical geometry (s2) switched off
 
 ## When were the data informing spotted owl habitat preference collected?
@@ -131,3 +134,21 @@ owl_shp[sample(1:nrow(owl_shp), 1e4),] %>%
 ```
 
 <img src="owl_data_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+
+Tony asked for the owl habitat quality data, and I suggested a raster
+format to help with compression. It’s important to note the coordinate
+reference system from the original shapefile: “NAD83 / California
+Albers”. I don’t believe this information will be included in the raster
+(.tif) file.
+
+``` r
+owl_big <- left_join(owl_shp, owl_vat, by = c("VALUE" = "Value"))
+
+owl_tidy <- owl_big %>%
+    filter(NAME == "SPOTTED OWL") %>%
+    select(quality = MEAN, geometry)
+
+owl_raster <- st_rasterize(owl_tidy)
+
+write_stars(owl_raster, "output/owl_habitat_quality_near_Rim.tif")
+```

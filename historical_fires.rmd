@@ -51,10 +51,12 @@ Next, let's find all the fires that came near the Rim Fire burn perimeter:
 
 rim_buffer <- st_buffer(rim, dist = 5e3) # Not sure about units, possibly meters
 
-fires %>%
+nearby_fires <- fires %>%
     filter(st_intersects(., rim_buffer, sparse = FALSE)[,1]) %>%
     filter(FIRE_NAME != "RIM", as.numeric(YEAR_) < 2013) %>% # I found no nearby fires in 2013
-    arrange(as.numeric(YEAR_)) %>%
+    arrange(as.numeric(YEAR_))
+
+nearby_fires %>%
     ggplot(aes(fill = DECADES)) +
     geom_sf(color = "white") +
     geom_sf(data = rim, alpha = .3, fill = "black", color = "black") +
@@ -76,3 +78,9 @@ There were quite a few. They generally seem to match the map from Tony, with the
 ![](images/tony_map.png)
 
 The most noticeable omission is the Wrights (Wright's?) Creek fire of 1950. We could probably add perimeter data for this fire if necessary, but it was so long ago that I wonder about its relevance.
+
+```{r warning=FALSE, message=FALSE}
+
+st_write(nearby_fires, "output/historical_fires_near_Rim.shp", append = FALSE)
+
+```
