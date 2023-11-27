@@ -31,7 +31,7 @@ rim <- fires %>%
     filter(FIRE_NAME == "RIM", YEAR_ == 2013)
 
 p1 <- ggplot() +
-    geom_stars(data = owl_raster) +
+    geom_stars(data = st_crop(owl_raster, st_bbox(rim))) +
     geom_sf(data = rim, fill = NA, color = "white", linewidth = 1) +
     theme_bw()
 
