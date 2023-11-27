@@ -26,9 +26,31 @@ nearby_fires <- st_crop(all_fires, st_bbox(rim_fire), epsilon = 1.1)
 rim_proj <- st_transform(rim_fire, 3310)
 nearby_proj <- st_transform(nearby_fires, 3310)
 
+### Vegetation data
+
+# Load, transform, and crop vegetation data
+veg_proj <- read_stars("./data/vegetation/US_130_EVT/us_130evt.tif") %>% 
+    st_warp(crs = 3310) %>%
+    st_crop(st_bbox(rim_proj), epsilon = 1.1)
+
 #### Plot figures
 
 ### Figure 2
+
+p2 <- ggplot() +
+    geom_stars(data = veg_proj) +
+    geom_sf(aes(color = ""), data = rim_proj, fill = NA, linewidth = 1.1) +
+    theme_bw() +
+    scale_fill_viridis_c(option = "mako", begin = 0.1) +
+    scale_color_manual(values = "red") +
+    labs(
+        fill = "Vegetation\ncategory",
+        color = "Rim Fire perimeter",
+        x = "Longitude",
+        y = "Latitude"
+    )
+
+ggsave("figures/Figure_2.svg", p2)
 
 ### Figure 3
 
