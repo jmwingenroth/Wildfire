@@ -7,22 +7,23 @@ library(stars)
 #### Load and format data
 
 ### Owl data
-
 owl_data <- read_stars("./output/owl_habitat_quality_near_Rim.tif")
 
 ### Fire data
-
-rim <- st_read("./data/CA_fire_perimeters/California_Fire_Perimeters__all_.shp") %>%
+fires <- st_read("./data/CA_fire_perimeters/California_Fire_Perimeters__all_.shp") 
+rim <-  fires %>%
     filter(FIRE_NAME == "RIM", YEAR_ == 2013) %>%
     st_transform(3310) # Convert to lat/long
 
-#### Figure 2
+#### Plot figures
 
-#### Figure 3
+### Figure 2
+
+### Figure 3
 
 p1 <- ggplot() +
-    geom_stars(data = st_crop(owl_data, st_bbox(rim))) +
-    geom_sf(aes(color = ""), data = rim, fill = NA, linewidth = 1) +
+    geom_stars(data = st_crop(owl_data, st_bbox(rim), epsilon = 1.1)) +
+    geom_sf(aes(color = ""), data = rim, fill = NA, linewidth = 1.1) +
     theme_bw() +
     scale_fill_viridis_c(option = "mako", begin = 0.1) +
     scale_color_manual(values = "red") +
@@ -35,4 +36,4 @@ p1 <- ggplot() +
 
 ggsave("figures/habitat_and_Rim.svg", p1)
 
-#### Figure 4
+### Figure 4
