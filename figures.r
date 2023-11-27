@@ -34,6 +34,6 @@ p1 <- ggplot() +
         y = "Latitude"
     )
 
-ggsave("figures/habitat_and_Rim.svg", p1)
+ggsave("figures/Figure_3.svg", p1)
 
 ### Figure 4
