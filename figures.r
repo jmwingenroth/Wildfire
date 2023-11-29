@@ -39,10 +39,12 @@ veg_proj <- read_stars("./data/vegetation/US_130_EVT/us_130evt.tif") %>%
 
 p2 <- ggplot() +
     geom_stars(data = veg_proj) +
-    geom_sf(aes(color = ""), data = rim_proj, fill = NA, linewidth = 1.1) +
+    geom_sf(aes(color = ""), data = rim_proj, fill = NA, linewidth = 0.8) +
     theme_bw() +
     scale_fill_viridis_c(option = "mako", begin = 0.1) +
     scale_color_manual(values = "red") +
+    scale_x_continuous(expand = c(0,0)) +
+    scale_y_continuous(expand = c(0,0)) +
     labs(
         fill = "Vegetation\ncategory",
         color = "Rim Fire perimeter",
@@ -56,10 +58,12 @@ ggsave("figures/Figure_2.svg", p2)
 
 p3 <- ggplot() +
     geom_stars(data = st_crop(owl_data, st_bbox(rim_proj), epsilon = 1.1)) +
-    geom_sf(aes(color = ""), data = rim_proj, fill = NA, linewidth = 1.1) +
+    geom_sf(aes(color = ""), data = rim_proj, fill = NA, linewidth = 0.8) +
     theme_bw() +
     scale_fill_viridis_c(option = "mako", begin = 0.1) +
     scale_color_manual(values = "red") +
+    scale_x_continuous(expand = c(0,0)) +
+    scale_y_continuous(expand = c(0,0)) +
     labs(
         fill = "Spotted owl\nhabitat quality",
         color = "Rim Fire perimeter",
