@@ -4,6 +4,7 @@ library(tidyverse)
 library(sf)
 library(raster)
 library(foreign)
+library(ggnewscale)
 
 sf_use_s2(FALSE)
 
@@ -31,7 +32,9 @@ rim_fire <- filter(all_fires, FIRE_NAME == "RIM", YEAR_ == 2013)
 figure_bbox <- bb_shrink(st_bbox(rim_fire), e = -0.1)
 
 # Find fires near Rim Fire
-nearby_fires <- st_crop(all_fires, figure_bbox)
+nearby_fires <- st_crop(all_fires, figure_bbox) %>%
+    filter(FIRE_NAME != "RIM", YEAR_ %in% 1993:2013) %>%
+    arrange(desc(SHAPE_Area))
 
 ### Owl data
 
@@ -78,6 +81,8 @@ veg_tidy <- as_tibble(bind_cols(as.data.frame(veg_data), veg_coords)) %>%
         ),
         Conifer = c("Conifer", "Conifer-Hardwood")
     ))
+
+
 
 #### Plot figures
 
@@ -133,3 +138,12 @@ p3 <- ggplot() +
 ggsave("figures/Figure_3.svg", p3, height = 7, width = 7)
 
 ### Figure 4
+
+p2 +
+    new_scale_fill() +
+    geom_sf(aes(fill = "Previous Fires"), data = nearby_fires, alpha = .7, color = alpha("black", .7)) +
+    labs(fill = "") +
+    scale_fill_manual(values = "orange")
+
+
+
