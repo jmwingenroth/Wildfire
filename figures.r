@@ -85,50 +85,51 @@ veg_tidy <- as_tibble(bind_cols(as.data.frame(veg_data), veg_coords)) %>%
 
 p2 <- ggplot() +
     geom_raster(data = veg_tidy, aes(x = x, y = y, fill = veg_cats)) +
-    geom_sf(aes(color = ""), data = rim_fire, fill = NA, linewidth = 0.8) +
+    geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
     scale_fill_manual(
         values = c(
             "pink",
             "#f5dc6e",
             "dark green",
-            "cyan",
+            "#c2aa42",
             "green",
             "dark blue",
             "light blue",
             "#3ea1b3"
         )
     ) +
-    scale_color_manual(values = "red") +
     scale_x_continuous(expand = c(0,0), limits = figure_bbox[c("xmin","xmax")]) +
     scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
     labs(
-        fill = "Vegetation\ncategory",
-        color = "Rim Fire perimeter",
+        title = "Pre-Fire (2012) Vegetation Categories",
+        fill = "",
         x = "Longitude",
         y = "Latitude"
-    )
+    ) +
+    theme(legend.position = "bottom") +
+    guides(fill = guide_legend(nrow = 4, byrow = TRUE))
 
-ggsave("figures/Figure_2.svg", p2)
+ggsave("figures/Figure_2.svg", p2, height = 7, width = 7)
 
 ### Figure 3
 
 p3 <- ggplot() +
     geom_raster(data = owl_tidy, aes(x = x, y = y, fill = owl_habitat_quality_near_Rim)) +
-    geom_sf(aes(color = ""), data = rim_fire, fill = NA, linewidth = 0.8) +
+    geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
     scale_fill_viridis_c(option = "mako", begin = 0.1) +
-    scale_color_manual(values = "red") +
     scale_x_continuous(expand = c(0,0), limits = figure_bbox[c("xmin","xmax")]) +
     scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
     coord_sf() +
     labs(
-        fill = "Spotted owl\nhabitat quality",
-        color = "Rim Fire perimeter",
+        title = "Spotted Owl Habitat Quality (0 = low, 1 = high)",
+        fill = "",
         x = "Longitude",
         y = "Latitude"
-    )
+    ) +
+    theme(legend.position = "bottom")
 
-ggsave("figures/Figure_3.svg", p3)
+ggsave("figures/Figure_3.svg", p3, height = 7, width = 7)
 
 ### Figure 4
