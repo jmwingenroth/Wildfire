@@ -2,49 +2,72 @@
 
 library(tidyverse)
 library(sf)
-library(stars)
+library(raster)
+
+sf_use_s2(FALSE)
+
+# Shrink/grow bounding box
+bb_shrink <- function (bb, e) {
+    dx = diff(bb[c("xmin", "xmax")])
+    dy = diff(bb[c("ymin", "ymax")])
+    st_bbox(setNames(c(bb["xmin"] + e * dx, bb["ymin"] + e * 
+        dy, bb["xmax"] - e * dx, bb["ymax"] - e * dy), c("xmin", 
+        "ymin", "xmax", "ymax")))
+}
 
 #### Load and format data
 
-### Owl data
-
-# Used a .tif I produced earlier because processing original data was slow
-owl_data <- read_stars("./output/owl_habitat_quality_near_Rim.tif")
-
 ### Fire data
 
-# Load fire data
-all_fires <- st_read("./data/CA_fire_perimeters/California_Fire_Perimeters__all_.shp") 
+# Load fire data and project to WGS 84
+all_fires <- st_read("./data/CA_fire_perimeters/California_Fire_Perimeters__all_.shp") %>%
+    st_transform(4326)
 
 # Isolate Rim Fire
 rim_fire <- filter(all_fires, FIRE_NAME == "RIM", YEAR_ == 2013)
 
-# Find fires near Rim Fire
-nearby_fires <- st_crop(all_fires, st_bbox(rim_fire), epsilon = 1.1)
+# Create a bbox object with extent for figures
+figure_bbox <- bb_shrink(st_bbox(rim_fire), e = -0.1)
 
-# Match to owl data projection (https://epsg.io/3310)
-rim_proj <- st_transform(rim_fire, 3310)
-nearby_proj <- st_transform(nearby_fires, 3310)
+# Find fires near Rim Fire
+nearby_fires <- st_crop(all_fires, figure_bbox)
+
+### Owl data
+
+# Load owl data and project to WGS 84
+owl_data <- raster("./output/owl_habitat_quality_near_Rim.tif") %>% 
+    projectRaster(crs = 4326, method = "ngb")
+
+# Get coordinates from owl data
+owl_coords <- xyFromCell(owl_data, seq_len(ncell(owl_data)))
+
+# Convert owl data and coordinates to a tibble
+owl_tidy <- as_tibble(bind_cols(as.data.frame(owl_data), owl_coords))
 
 ### Vegetation data
 
-# Load, transform, and crop vegetation data
-veg_proj <- read_stars("./data/vegetation/US_130_EVT/us_130evt.tif") %>% 
-    st_warp(crs = 3310) %>%
-    st_crop(st_bbox(rim_proj), epsilon = 1.1)
+# Load vegetation data and project to WGS 84
+veg_data <- raster("./data/vegetation/US_130_EVT/us_130evt.tif") %>% 
+    projectRaster(crs = 4326, method = "ngb")
+
+# Get coordinates from owl data
+veg_coords <- xyFromCell(veg_data, seq_len(ncell(veg_data)))
+
+# Convert owl data and coordinates to a tibble
+veg_tidy <- as_tibble(bind_cols(as.data.frame(veg_data), veg_coords))
 
 #### Plot figures
 
 ### Figure 2
 
 p2 <- ggplot() +
-    geom_stars(data = veg_proj) +
-    geom_sf(aes(color = ""), data = rim_proj, fill = NA, linewidth = 0.8) +
+    geom_raster(data = veg_tidy, aes(x = x, y = y, fill = OID_)) +
+    geom_sf(aes(color = ""), data = rim_fire, fill = NA, linewidth = 0.8) +
     theme_bw() +
     scale_fill_viridis_c(option = "mako", begin = 0.1) +
     scale_color_manual(values = "red") +
-    scale_x_continuous(expand = c(0,0)) +
-    scale_y_continuous(expand = c(0,0)) +
+    scale_x_continuous(expand = c(0,0), limits = figure_bbox[c("xmin","xmax")]) +
+    scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
     labs(
         fill = "Vegetation\ncategory",
         color = "Rim Fire perimeter",
@@ -57,13 +80,14 @@ ggsave("figures/Figure_2.svg", p2)
 ### Figure 3
 
 p3 <- ggplot() +
-    geom_stars(data = st_crop(owl_data, st_bbox(rim_proj), epsilon = 1.1)) +
-    geom_sf(aes(color = ""), data = rim_proj, fill = NA, linewidth = 0.8) +
+    geom_raster(data = owl_tidy, aes(x = x, y = y, fill = owl_habitat_quality_near_Rim)) +
+    geom_sf(aes(color = ""), data = rim_fire, fill = NA, linewidth = 0.8) +
     theme_bw() +
     scale_fill_viridis_c(option = "mako", begin = 0.1) +
     scale_color_manual(values = "red") +
-    scale_x_continuous(expand = c(0,0)) +
-    scale_y_continuous(expand = c(0,0)) +
+    scale_x_continuous(expand = c(0,0), limits = figure_bbox[c("xmin","xmax")]) +
+    scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
+    coord_sf() +
     labs(
         fill = "Spotted owl\nhabitat quality",
         color = "Rim Fire perimeter",
