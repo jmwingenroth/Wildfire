@@ -97,7 +97,7 @@ veg_coords_16 <- xyFromCell(veg_data_16, seq_len(ncell(veg_data_16)))
 # Convert vegetation data and coordinates to a tibble, join attributes, and refactor
 veg_tidy_16 <- as_tibble(bind_cols(as.data.frame(veg_data_16), veg_coords_16)) %>%
     left_join(veg_attributes_16, by = c("EVT_NAME" = "VALUE")) %>%
-    filter(!is.na(EVT_PHYS)) #%>%
+    filter(!is.na(EVT_PHYS)) %>%
     mutate(veg_cats = fct_collapse(
         EVT_PHYS,
         `Developed/Agricultural` = c(
@@ -108,15 +108,15 @@ veg_tidy_16 <- as_tibble(bind_cols(as.data.frame(veg_data_16), veg_coords_16)) %
             "Quarries-Strip Mines-Gravel Pits-Well and Wind Pads",
             "Developed-High Intensity",
             "Agricultural",
-            "Exotic Herbaceous"
+            "Exotic Herbaceous",
+            "Exotic Tree-Shrub"
         ),
         `Sparse or No Vegetation` = c(
-            "Barren",
-            "Sparsely Vegetated",
-            "Snow-Ice"
+            "Sparsely Vegetated"
         ),
         Conifer = c("Conifer", "Conifer-Hardwood")
-    ))
+    )) %>%
+    mutate(veg_cats = fct_relevel(veg_cats, "Sparse or No Vegetation", after = 1))
 
 burn_16 <- filter(veg_tidy_16, str_detect(EVT_NAME.y, "Burned"))
 
@@ -202,4 +202,36 @@ p4 <- p2 +
 
 ggsave("figures/Figure_4.svg", p4, height = 7, width = 7)
 
+### Figure 5
+
+p5 <- ggplot() +
+    geom_raster(data = veg_tidy_16, aes(x = x, y = y, fill = veg_cats)) +
+    geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
+    theme_bw() +
+    scale_fill_manual(
+        values = c(
+            "pink",
+            "#f5dc6e",
+            "dark green",
+            "#c2aa42",
+            "green",
+            "dark blue",
+            "light blue",
+            "#3ea1b3"
+        )
+    ) +
+    scale_x_continuous(expand = c(0,0), limits = figure_bbox[c("xmin","xmax")]) +
+    scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
+    labs(
+        title = "Post-Fire (2016) Vegetation Categories",
+        fill = "",
+        x = "",
+        y = ""
+    ) +
+    theme(legend.position = "bottom") +
+    guides(fill = guide_legend(nrow = 4, byrow = TRUE))
+
+ggsave("figures/Figure_5.svg", p5, height = 7, width = 7)
+
+### Figure 6
 
