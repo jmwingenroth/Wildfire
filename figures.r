@@ -158,6 +158,7 @@ p2 <- ggplot() +
     guides(fill = guide_legend(nrow = 4, byrow = TRUE))
 
 ggsave("figures/Figure_2.svg", p2, height = 7, width = 7)
+ggsave("figures/Figure_2.png", p2, height = 7, width = 7, dpi = 600)
 
 ### Figure 3
 
@@ -178,6 +179,7 @@ p3 <- ggplot() +
     theme(legend.position = "bottom")
 
 ggsave("figures/Figure_3.svg", p3, height = 7, width = 7)
+ggsave("figures/Figure_3.png", p3, height = 7, width = 7, dpi = 600)
 
 ### Figure 4
 
@@ -196,11 +198,12 @@ p4 <- p2 +
     ) +
     new_scale_fill() +
     geom_sf(aes(fill = "Previous Fires"), data = nearby_fires, alpha = .7, color = alpha("black", .7)) +
-    geom_sf(aes(fill = "Treatment Areas"), data = treatments, color = NA) +
+    geom_sf(aes(fill = "Treatment Areas"), data = treatments, alpha = .7, color = alpha("black", .7)) +
     labs(fill = "", title = "Previous Fires (1993 Onwards) and Treatment Areas (2003 Onwards)") +
     scale_fill_manual(values = c("orange", "cyan"))
 
 ggsave("figures/Figure_4.svg", p4, height = 7, width = 7)
+ggsave("figures/Figure_4.png", p4, height = 7, width = 7, dpi = 600)
 
 ### Figure 5
 
@@ -232,6 +235,28 @@ p5 <- ggplot() +
     guides(fill = guide_legend(nrow = 4, byrow = TRUE))
 
 ggsave("figures/Figure_5.svg", p5, height = 7, width = 7)
+ggsave("figures/Figure_5.png", p5, height = 7, width = 7, dpi = 600)
 
 ### Figure 6
 
+p6 <- p5 +
+    scale_fill_manual(
+        values = c(
+            "#e3d8e0",
+            "#e6e2ca",
+            "#415443",
+            "#8c8774",
+            "#97ad93",
+            "#1d1f2e",
+            "#c8d7de",
+            "#7d8c96"
+        )
+    ) +
+    new_scale_fill() +
+    geom_raster(aes(x = x, y = y, fill = "Recently Burned"), data = burn_16) +
+    geom_sf(aes(fill = "Treatment Areas"), data = treatments, alpha = .7, color = alpha("black", .7)) +
+    labs(fill = "", title = "Treatment Areas (2003 Onwards) and LANDFIRE Recently Burned Areas") +
+    scale_fill_manual(values = c("red", "cyan"))
+
+ggsave("figures/Figure_6.svg", p6, height = 7, width = 7)
+ggsave("figures/Figure_6.png", p6, height = 7, width = 7, dpi = 600)
