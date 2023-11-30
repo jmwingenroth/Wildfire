@@ -122,31 +122,31 @@
 <text x='459.66' y='368.27' style='font-size: 8.80px;fill: #4D4D4D; font-family: "Arial";' textLength='8.30px' lengthAdjust='spacingAndGlyphs'>W</text>
 <text x='276.78' y='380.85' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='48.34px' lengthAdjust='spacingAndGlyphs'>Longitude</text>
 <text transform='translate(13.36,194.03) rotate(-90)' text-anchor='middle' style='font-size: 11.00px; font-family: "Arial";' textLength='39.16px' lengthAdjust='spacingAndGlyphs'>Latitude</text>
-<rect x='129.30' y='394.12' width='294.97' height='96.52' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='140.26' y='399.60' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='140.26' y='399.60' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #FFC0CB;' />
-<rect x='273.69' y='399.60' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='273.69' y='399.60' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #F5DC6E;' />
-<rect x='140.26' y='422.36' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='140.26' y='422.36' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #006400;' />
-<rect x='273.69' y='422.36' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='273.69' y='422.36' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #C2AA42;' />
-<rect x='140.26' y='445.12' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='140.26' y='445.12' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #00FF00;' />
-<rect x='273.69' y='445.12' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='273.69' y='445.12' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #00008B;' />
-<rect x='140.26' y='467.88' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='140.26' y='467.88' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #ADD8E6;' />
-<rect x='273.69' y='467.88' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
-<rect x='273.69' y='467.88' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #3EA1B3;' />
-<text x='163.02' y='411.39' style='font-size: 8.80px; font-family: "Arial";' textLength='105.19px' lengthAdjust='spacingAndGlyphs'>Developed and Agricultural</text>
-<text x='296.45' y='411.39' style='font-size: 8.80px; font-family: "Arial";' textLength='122.34px' lengthAdjust='spacingAndGlyphs'>Sparsely Vegetated and Barren</text>
-<text x='163.02' y='434.15' style='font-size: 8.80px; font-family: "Arial";' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Conifer</text>
-<text x='296.45' y='434.15' style='font-size: 8.80px; font-family: "Arial";' textLength='40.11px' lengthAdjust='spacingAndGlyphs'>Grassland</text>
-<text x='163.02' y='456.91' style='font-size: 8.80px; font-family: "Arial";' textLength='40.11px' lengthAdjust='spacingAndGlyphs'>Hardwood</text>
-<text x='296.45' y='456.91' style='font-size: 8.80px; font-family: "Arial";' textLength='47.13px' lengthAdjust='spacingAndGlyphs'>Open Water</text>
-<text x='163.02' y='479.67' style='font-size: 8.80px; font-family: "Arial";' textLength='32.77px' lengthAdjust='spacingAndGlyphs'>Riparian</text>
-<text x='296.45' y='479.67' style='font-size: 8.80px; font-family: "Arial";' textLength='40.13px' lengthAdjust='spacingAndGlyphs'>Shrubland</text>
+<rect x='150.84' y='394.12' width='251.89' height='96.52' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='161.80' y='399.60' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='161.80' y='399.60' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #FFC0CB;' />
+<rect x='278.58' y='399.60' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='278.58' y='399.60' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #F5DC6E;' />
+<rect x='161.80' y='422.36' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='161.80' y='422.36' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #006400;' />
+<rect x='278.58' y='422.36' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='278.58' y='422.36' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #C2AA42;' />
+<rect x='161.80' y='445.12' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='161.80' y='445.12' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #00FF00;' />
+<rect x='278.58' y='445.12' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='278.58' y='445.12' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #00008B;' />
+<rect x='161.80' y='467.88' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='161.80' y='467.88' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #ADD8E6;' />
+<rect x='278.58' y='467.88' width='17.28' height='17.28' style='stroke-width: 1.07; stroke: none; fill: #FFFFFF;' />
+<rect x='278.58' y='467.88' width='17.28' height='17.28' style='stroke-width: 0.75; stroke: none; fill: #3EA1B3;' />
+<text x='184.56' y='411.39' style='font-size: 8.80px; font-family: "Arial";' textLength='88.54px' lengthAdjust='spacingAndGlyphs'>Developed/Agricultural</text>
+<text x='301.34' y='411.39' style='font-size: 8.80px; font-family: "Arial";' textLength='95.91px' lengthAdjust='spacingAndGlyphs'>Sparse or No Vegetation</text>
+<text x='184.56' y='434.15' style='font-size: 8.80px; font-family: "Arial";' textLength='28.37px' lengthAdjust='spacingAndGlyphs'>Conifer</text>
+<text x='301.34' y='434.15' style='font-size: 8.80px; font-family: "Arial";' textLength='40.11px' lengthAdjust='spacingAndGlyphs'>Grassland</text>
+<text x='184.56' y='456.91' style='font-size: 8.80px; font-family: "Arial";' textLength='40.11px' lengthAdjust='spacingAndGlyphs'>Hardwood</text>
+<text x='301.34' y='456.91' style='font-size: 8.80px; font-family: "Arial";' textLength='47.13px' lengthAdjust='spacingAndGlyphs'>Open Water</text>
+<text x='184.56' y='479.67' style='font-size: 8.80px; font-family: "Arial";' textLength='32.77px' lengthAdjust='spacingAndGlyphs'>Riparian</text>
+<text x='301.34' y='479.67' style='font-size: 8.80px; font-family: "Arial";' textLength='40.13px' lengthAdjust='spacingAndGlyphs'>Shrubland</text>
 <text x='55.05' y='22.80' style='font-size: 13.20px; font-family: "Arial";' textLength='222.90px' lengthAdjust='spacingAndGlyphs'>Pre-Fire (2012) Vegetation Categories</text>
 </g>
 </svg>

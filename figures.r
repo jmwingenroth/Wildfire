@@ -64,7 +64,7 @@ veg_tidy <- as_tibble(bind_cols(as.data.frame(veg_data), veg_coords)) %>%
     filter(!is.na(EVT_PHYS)) %>%
     mutate(veg_cats = fct_collapse(
         EVT_PHYS,
-        `Developed and Agricultural` = c(
+        `Developed/Agricultural` = c(
             "Developed",
             "Developed-Roads",
             "Developed-Low Intensity",
@@ -74,7 +74,7 @@ veg_tidy <- as_tibble(bind_cols(as.data.frame(veg_data), veg_coords)) %>%
             "Agricultural",
             "Exotic Herbaceous"
         ),
-        `Sparsely Vegetated and Barren` = c(
+        `Sparse or No Vegetation` = c(
             "Barren",
             "Sparsely Vegetated",
             "Snow-Ice"
@@ -82,7 +82,11 @@ veg_tidy <- as_tibble(bind_cols(as.data.frame(veg_data), veg_coords)) %>%
         Conifer = c("Conifer", "Conifer-Hardwood")
     ))
 
+### Treatment data
 
+treatments <- read_sf("./data/treatment_data/Rim_Rire_Old_Proj.shp") %>%
+    st_transform(4326) %>%
+    arrange(desc(SHAPE_AREA))
 
 #### Plot figures
 
@@ -128,7 +132,7 @@ p3 <- ggplot() +
     scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
     coord_sf() +
     labs(
-        title = "Spotted Owl Habitat Quality (0 = low, 1 = high)",
+        title = "Spotted Owl Habitat Quality (0 = Low, 1 = High)",
         fill = "",
         x = "Longitude",
         y = "Latitude"
@@ -139,11 +143,25 @@ ggsave("figures/Figure_3.svg", p3, height = 7, width = 7)
 
 ### Figure 4
 
-p2 +
+p4 <- p2 +
+    scale_fill_manual(
+        values = c(
+            "#e3d8e0",
+            "#e6e2ca",
+            "#415443",
+            "#8c8774",
+            "#97ad93",
+            "#1d1f2e",
+            "#c8d7de",
+            "#7d8c96"
+        )
+    ) +
     new_scale_fill() +
     geom_sf(aes(fill = "Previous Fires"), data = nearby_fires, alpha = .7, color = alpha("black", .7)) +
-    labs(fill = "") +
-    scale_fill_manual(values = "orange")
+    geom_sf(aes(fill = "Treatment Areas"), data = treatments, color = NA) +
+    labs(fill = "", title = "Previous Fires (1993 Onwards) and Treatment Areas (2003 Onwards)") +
+    scale_fill_manual(values = c("orange", "cyan"))
 
+ggsave("figures/Figure_4.svg", p4, height = 7, width = 7)
 
 
