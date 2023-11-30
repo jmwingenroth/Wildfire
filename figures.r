@@ -50,6 +50,8 @@ owl_tidy <- as_tibble(bind_cols(as.data.frame(owl_data), owl_coords))
 
 ### Vegetation data
 
+## 2012
+
 # Load vegetation data and project to WGS 84
 veg_data <- raster("./data/vegetation/US_130_EVT/us_130evt.tif") %>% 
     projectRaster(crs = 4326, method = "ngb")
@@ -82,6 +84,42 @@ veg_tidy <- as_tibble(bind_cols(as.data.frame(veg_data), veg_coords)) %>%
         Conifer = c("Conifer", "Conifer-Hardwood")
     ))
 
+## 2016
+
+# Load vegetation data and project to WGS 84
+veg_data_16 <- raster("./data/vegetation/LF2016_EVT_200_CONUS/LC16_EVT_200.tif") %>% 
+    projectRaster(crs = 4326, method = "ngb")
+veg_attributes_16 <- as_tibble(read.dbf("./data/vegetation/LF2016_EVT_200_CONUS/LC16_EVT_200.tif.vat.dbf"))
+
+# Get coordinates from vegetation data
+veg_coords_16 <- xyFromCell(veg_data_16, seq_len(ncell(veg_data_16)))
+
+# Convert vegetation data and coordinates to a tibble, join attributes, and refactor
+veg_tidy_16 <- as_tibble(bind_cols(as.data.frame(veg_data_16), veg_coords_16)) %>%
+    left_join(veg_attributes_16, by = c("EVT_NAME" = "VALUE")) %>%
+    filter(!is.na(EVT_PHYS)) #%>%
+    mutate(veg_cats = fct_collapse(
+        EVT_PHYS,
+        `Developed/Agricultural` = c(
+            "Developed",
+            "Developed-Roads",
+            "Developed-Low Intensity",
+            "Developed-Medium Intensity",
+            "Quarries-Strip Mines-Gravel Pits-Well and Wind Pads",
+            "Developed-High Intensity",
+            "Agricultural",
+            "Exotic Herbaceous"
+        ),
+        `Sparse or No Vegetation` = c(
+            "Barren",
+            "Sparsely Vegetated",
+            "Snow-Ice"
+        ),
+        Conifer = c("Conifer", "Conifer-Hardwood")
+    ))
+
+burn_16 <- filter(veg_tidy_16, str_detect(EVT_NAME.y, "Burned"))
+
 ### Treatment data
 
 treatments <- read_sf("./data/treatment_data/Rim_Rire_Old_Proj.shp") %>%
@@ -113,8 +151,8 @@ p2 <- ggplot() +
     labs(
         title = "Pre-Fire (2012) Vegetation Categories",
         fill = "",
-        x = "Longitude",
-        y = "Latitude"
+        x = "",
+        y = ""
     ) +
     theme(legend.position = "bottom") +
     guides(fill = guide_legend(nrow = 4, byrow = TRUE))
@@ -134,8 +172,8 @@ p3 <- ggplot() +
     labs(
         title = "Spotted Owl Habitat Quality (0 = Low, 1 = High)",
         fill = "",
-        x = "Longitude",
-        y = "Latitude"
+        x = "",
+        y = ""
     ) +
     theme(legend.position = "bottom")
 
