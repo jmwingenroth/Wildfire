@@ -126,12 +126,23 @@ treatments <- read_sf("./data/treatment_data/Rim_Rire_Old_Proj.shp") %>%
     st_transform(4326) %>%
     arrange(desc(SHAPE_AREA))
 
+### National park data
+
+# Load park data and project to WGS 84
+all_parks <- st_read("./data/National_parks/nps_boundary.shp") %>%
+    st_transform(4326)
+
+# Isolate Yosemite
+yosemite <- all_parks %>%
+    filter(str_detect(UNIT_NAME, "Yosemite"))
+
 #### Plot figures
 
 ### Figure 2
 
 p2 <- ggplot() +
     geom_raster(data = veg_tidy, aes(x = x, y = y, fill = veg_cats)) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.5) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
     scale_fill_manual(
@@ -164,6 +175,7 @@ ggsave("figures/Figure_2.png", p2, height = 7, width = 7, dpi = 600)
 
 p3 <- ggplot() +
     geom_raster(data = owl_tidy, aes(x = x, y = y, fill = owl_habitat_quality_near_Rim)) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.5) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
     scale_fill_viridis_c(option = "mako", begin = 0.1) +
@@ -209,6 +221,7 @@ ggsave("figures/Figure_4.png", p4, height = 7, width = 7, dpi = 600)
 
 p5 <- ggplot() +
     geom_raster(data = veg_tidy_16, aes(x = x, y = y, fill = veg_cats)) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.5) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
     scale_fill_manual(
