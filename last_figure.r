@@ -9,6 +9,15 @@ library(raster)
 
 sf_use_s2(FALSE)
 
+# Shrink/grow bounding box
+bb_shrink <- function (bb, e) {
+    dx = diff(bb[c("xmin", "xmax")])
+    dy = diff(bb[c("ymin", "ymax")])
+    st_bbox(setNames(c(bb["xmin"] + e * dx, bb["ymin"] + e * 
+        dy, bb["xmax"] - e * dx, bb["ymax"] - e * dy), c("xmin", 
+        "ymin", "xmax", "ymax")))
+}
+
 ### Load fire, treatment, and NP data
 
 # Load fire data and project to WGS 84
@@ -37,6 +46,8 @@ treatments <- read_sf("./data/treatment_data/Rim_Rire_Old_Proj.shp") %>%
     st_transform(4326) %>%
     arrange(desc(SHAPE_AREA))
 
+treatments_within <- st_intersection(treatments, rim_fire)
+
 # Load park data and project to WGS 84
 all_parks <- st_read("./data/National_parks/nps_boundary.shp") %>%
     st_transform(4326)
@@ -60,10 +71,48 @@ burn_data <- mask(burn_data, rim_fire)
 # Get coordinates from burn data
 burn_coords <- xyFromCell(burn_data, seq_len(ncell(burn_data)))
 
-# Convert owl data and coordinates to a tibble
+# Convert burn data and coordinates to a tibble
 burn_tidy <- as_tibble(bind_cols(as.data.frame(burn_data), burn_coords)) %>%
     filter(!is.na(Layer_1))
 
+### Create plots
+
+##4a
+
+# Filter treatment areas
+buffers <- treatments_within %>%
+    filter(SHAPE_AREA > 1e-5) %>%
+    st_buffer(dist = .0055) %>%
+    st_union() %>%
+    st_cast("POLYGON") %>%
+    tibble(geometry = .) %>%
+    mutate(area = as.numeric(st_area(geometry))) %>%
+    filter(area > 1e7) %>%
+    st_as_sf() %>%
+    st_join(treatments_within) %>%
+    group_by(geometry) %>%
+    summarise(treatment_area = sum(SHAPE_AREA)) %>%
+    filter(treatment_area > 5e-4)
+
+# Plot data
+treatment_overlay <- ggplot() +
+    geom_raster(data = burn_tidy, aes(x = x, y = y, fill = Layer_1)) +
+    geom_sf(data = rim_fire, fill = NA, color = "black", linewidth = 0.8) +
+    geom_sf(data = yosemite_within, fill = NA, color = "black", linewidth = 0.8, lty = "31") +
+    geom_sf(data = buffers, aes(color = ""), fill = NA, linewidth = 1.3) +
+    #geom_sf(data = st_union(treatments_within), fill = "black") +
+    theme_bw() +
+    scale_fill_viridis_c(option = "turbo", begin = .5,) +
+    scale_color_manual(values = "blue") +
+    labs(fill = "Burn Severity (dNBR)", color = "Areas Treated Most\nHeavily Since 2003", x = "", y = "")
+
+# Save plots
+ggsave("figures/Figure_4a_overlay.svg", treatment_overlay, height = 7, width = 7)
+ggsave("figures/Figure_4a_overlay.png", treatment_overlay, height = 7, width = 7, dpi = 600)
+
+##4b
+
+# Plot data
 burn_overlay <- ggplot() +
     geom_raster(data = burn_tidy, aes(x = x, y = y, fill = Layer_1)) +
     geom_sf(data = rim_fire, fill = NA, color = "black", linewidth = 0.8) +
@@ -74,5 +123,6 @@ burn_overlay <- ggplot() +
     scale_color_manual(values = "blue") +
     labs(fill = "Burn Severity (dNBR)", color = "Largest Subregions\nBurned Since 1993", x = "", y = "")
 
+# Save plots
 ggsave("figures/Figure_4b_overlay.svg", burn_overlay, height = 7, width = 7)
 ggsave("figures/Figure_4b_overlay.png", burn_overlay, height = 7, width = 7, dpi = 600)
