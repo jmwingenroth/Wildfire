@@ -178,17 +178,16 @@ p3 <- ggplot() +
     geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
-    scale_fill_gradient(low = "white", high = "#116e0e") +
+    scale_fill_gradient(low = "#dbffe3", high = "#116e0e") +
     scale_x_continuous(expand = c(0,0), limits = figure_bbox[c("xmin","xmax")]) +
     scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
     coord_sf() +
     labs(
         title = "Spotted Owl Habitat Quality (0 = Low, 1 = High)",
-        fill = "",
+        fill = "Habitat Quality",
         x = "",
         y = ""
-    ) +
-    theme(legend.position = "bottom")
+    )
 
 ggsave("figures/Figure_3.svg", p3, height = 7, width = 7)
 ggsave("figures/Figure_3.png", p3, height = 7, width = 7, dpi = 600)
