@@ -96,7 +96,7 @@ veg_coords_16 <- xyFromCell(veg_data_16, seq_len(ncell(veg_data_16)))
 
 # Convert vegetation data and coordinates to a tibble, join attributes, and refactor
 veg_tidy_16 <- as_tibble(bind_cols(as.data.frame(veg_data_16), veg_coords_16)) %>%
-    left_join(veg_attributes_16, by = c("layer" = "VALUE")) %>%
+    left_join(veg_attributes_16, by = c("EVT_NAME" = "VALUE")) %>%
     filter(!is.na(EVT_PHYS)) %>%
     mutate(veg_cats = fct_collapse(
         EVT_PHYS,
@@ -118,7 +118,7 @@ veg_tidy_16 <- as_tibble(bind_cols(as.data.frame(veg_data_16), veg_coords_16)) %
     )) %>%
     mutate(veg_cats = fct_relevel(veg_cats, "Sparse or No Vegetation", after = 1))
 
-burn_16 <- filter(veg_tidy_16, str_detect(EVT_NAME, "Burned"))
+burn_16 <- filter(veg_tidy_16, str_detect(EVT_NAME.y, "Burned"))
 
 ### Treatment data
 
