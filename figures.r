@@ -96,7 +96,7 @@ veg_coords_16 <- xyFromCell(veg_data_16, seq_len(ncell(veg_data_16)))
 
 # Convert vegetation data and coordinates to a tibble, join attributes, and refactor
 veg_tidy_16 <- as_tibble(bind_cols(as.data.frame(veg_data_16), veg_coords_16)) %>%
-    left_join(veg_attributes_16, by = c("EVT_NAME" = "VALUE")) %>%
+    left_join(veg_attributes_16, by = c("layer" = "VALUE")) %>%
     filter(!is.na(EVT_PHYS)) %>%
     mutate(veg_cats = fct_collapse(
         EVT_PHYS,
@@ -118,7 +118,7 @@ veg_tidy_16 <- as_tibble(bind_cols(as.data.frame(veg_data_16), veg_coords_16)) %
     )) %>%
     mutate(veg_cats = fct_relevel(veg_cats, "Sparse or No Vegetation", after = 1))
 
-burn_16 <- filter(veg_tidy_16, str_detect(EVT_NAME.y, "Burned"))
+burn_16 <- filter(veg_tidy_16, str_detect(EVT_NAME, "Burned"))
 
 ### Treatment data
 
@@ -142,7 +142,7 @@ yosemite <- all_parks %>%
 
 p2 <- ggplot() +
     geom_raster(data = veg_tidy, aes(x = x, y = y, fill = veg_cats)) +
-    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.5) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
     scale_fill_manual(
@@ -175,10 +175,10 @@ ggsave("figures/Figure_2.png", p2, height = 7, width = 7, dpi = 600)
 
 p3 <- ggplot() +
     geom_raster(data = owl_tidy, aes(x = x, y = y, fill = owl_habitat_quality_near_Rim)) +
-    geom_sf(data = yosemite, fill = NA, color = "green", linewidth = 0.5) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
-    scale_fill_viridis_c(option = "mako", begin = 0.1) +
+    scale_fill_gradient(low = "white", high = "#116e0e") +
     scale_x_continuous(expand = c(0,0), limits = figure_bbox[c("xmin","xmax")]) +
     scale_y_continuous(expand = c(0,0), limits = figure_bbox[c("ymin","ymax")]) +
     coord_sf() +
@@ -211,7 +211,7 @@ p4 <- p2 +
     new_scale_fill() +
     geom_sf(aes(fill = "Previous Fires"), data = nearby_fires, alpha = .7, color = alpha("black", .7)) +
     geom_sf(aes(fill = "Treatment Areas"), data = treatments, alpha = .7, color = alpha("black", .7)) +
-    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.5) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
     labs(fill = "", title = "Previous Fires (1993 Onwards) and Treatment Areas (2003 Onwards)") +
     scale_fill_manual(values = c("orange", "cyan"))
 
@@ -222,7 +222,7 @@ ggsave("figures/Figure_4.png", p4, height = 7, width = 7, dpi = 600)
 
 p5 <- ggplot() +
     geom_raster(data = veg_tidy_16, aes(x = x, y = y, fill = veg_cats)) +
-    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.5) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
     theme_bw() +
     scale_fill_manual(
@@ -269,7 +269,7 @@ p6 <- p5 +
     new_scale_fill() +
     geom_raster(aes(x = x, y = y, fill = "Recently Burned"), data = burn_16) +
     geom_sf(aes(fill = "Treatment Areas"), data = treatments, alpha = .7, color = alpha("black", .7)) +
-    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.5) +
+    geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
     labs(fill = "", title = "Treatment Areas (2003 Onwards) and LANDFIRE Recently Burned Areas") +
     scale_fill_manual(values = c("red", "cyan"))
 
