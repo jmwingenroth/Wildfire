@@ -217,7 +217,7 @@ p4 <- p2 +
     geom_sf(aes(fill = "Treatment Areas"), data = treatments, alpha = .7, color = alpha("black", .7)) +
     geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
     geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
-    labs(fill = "", title = "Previous Fires (1993 Onwards) and Treatment Areas (2003 Onwards)") +
+    labs(fill = "", title = "Previous Treatment Areas (2003 Onwards) and Fires") +
     scale_fill_manual(values = c("#8a0000","orange", "cyan")) +
     guides(fill = guide_legend(nrow = 4, byrow = TRUE))
 
