@@ -36,6 +36,10 @@ nearby_fires <- st_crop(all_fires, figure_bbox) %>%
     filter(FIRE_NAME != "RIM", YEAR_ %in% 1993:2013) %>%
     arrange(desc(SHAPE_Area))
 
+old_nearby_fires <- st_crop(all_fires, figure_bbox) %>%
+    filter(FIRE_NAME != "RIM", YEAR_ < 1993) %>%
+    arrange(desc(SHAPE_Area))
+
 ### Owl data
 
 # Load owl data and project to WGS 84
@@ -208,11 +212,14 @@ p4 <- p2 +
         )
     ) +
     new_scale_fill() +
-    geom_sf(aes(fill = "Previous Fires"), data = nearby_fires, alpha = .7, color = alpha("black", .7)) +
+    geom_sf(aes(fill = "Previous Fires Before 1993"), data = old_nearby_fires, alpha = .7, color = alpha("black", .7)) +
+    geom_sf(aes(fill = "Previous Fires Since 1993"), data = nearby_fires, alpha = .7, color = alpha("black", .7)) +
     geom_sf(aes(fill = "Treatment Areas"), data = treatments, alpha = .7, color = alpha("black", .7)) +
     geom_sf(data = yosemite, fill = NA, color = "black", linewidth = 0.8) +
-    labs(fill = "", title = "Previous Fires (1993 Onwards) and Treatment Areas (2003 Onwards)") +
-    scale_fill_manual(values = c("orange", "cyan"))
+    geom_sf(data = rim_fire, fill = NA, color = "red", linewidth = 0.8) +
+    labs(fill = "", title = "Previous Treatment Areas (2003 Onwards) and Fires") +
+    scale_fill_manual(values = c("#8a0000","orange", "cyan")) +
+    guides(fill = guide_legend(nrow = 4, byrow = TRUE))
 
 ggsave("figures/Figure_4.svg", p4, height = 7, width = 7)
 ggsave("figures/Figure_4.png", p4, height = 7, width = 7, dpi = 600)
