@@ -31,7 +31,7 @@ First, a plot of the Rim Fire perimeter:
 
 ```{r}
 
-fires <- st_read("./data/CA_fire_perimeters/California_Fire_Perimeters__all_.shp")
+fires <- st_read("../data/CA_fire_perimeters/California_Fire_Perimeters__all_.shp")
 
 rim <- fires %>%
     filter(FIRE_NAME == "RIM", YEAR_ == 2013)
@@ -75,12 +75,12 @@ nearby_fires %>%
 
 There were quite a few. They generally seem to match the map from Tony, with the exception of a few older (yellow) fires:
 
-![](images/tony_map.png)
+![](../images/tony_map.png)
 
 The most noticeable omission is the Wrights (Wright's?) Creek fire of 1950. We could probably add perimeter data for this fire if necessary, but it was so long ago that I wonder about its relevance.
 
 ```{r warning=FALSE, message=FALSE}
 
-st_write(nearby_fires, "output/historical_fires_near_Rim.shp", append = FALSE)
+st_write(nearby_fires, "../output/historical_fires_near_Rim.shp", append = FALSE)
 
 ```

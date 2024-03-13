@@ -1,7 +1,7 @@
 Fires overlapping the Rim Fire perimeter
 ================
 Last updated by Jordan Wingenroth on
-11/06/23
+12/13/23
 
 ## Environment info
 
@@ -73,7 +73,7 @@ perimeter:
 There were quite a few. They generally seem to match the map from Tony,
 with the exception of a few older (yellow) fires:
 
-![](images/tony_map.png)
+![](../images/tony_map.png)
 
 The most noticeable omission is the Wrights (Wright’s?) Creek fire of
 1950. We could probably add perimeter data for this fire if necessary,
@@ -81,5 +81,5 @@ but it was so long ago that I wonder about its relevance.
 
     ## Deleting layer `historical_fires_near_Rim' using driver `ESRI Shapefile'
     ## Writing layer `historical_fires_near_Rim' to data source 
-    ##   `output/historical_fires_near_Rim.shp' using driver `ESRI Shapefile'
+    ##   `../output/historical_fires_near_Rim.shp' using driver `ESRI Shapefile'
     ## Writing 160 features with 21 fields and geometry type Multi Polygon.
